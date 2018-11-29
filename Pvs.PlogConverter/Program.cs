@@ -127,8 +127,16 @@ namespace ProgramVerificationSystems.PlogConverter
             {
                 errorMessage = string.Format("Output directory '{0}' does not exist.{1}", converterOptions.OutputPath, NewLine);
                 return false;
-            }            
-            
+            }
+
+            // Output directory represents a root drive
+            string outputDirRoot = Path.GetPathRoot(parsedArgs.RenderInfo.OutputDir);
+            if (outputDirRoot.Equals(parsedArgs.RenderInfo.OutputDir, StringComparison.InvariantCultureIgnoreCase) &&
+                !outputDirRoot.EndsWith(Path.DirectorySeparatorChar.ToString()))
+            {
+                parsedArgs.RenderInfo.OutputDir += Path.DirectorySeparatorChar;
+            }
+
             parsedArgs.RenderInfo.SrcRoot = converterOptions.SrcRoot;
 
             // Getting a map for levels by the analyzer type

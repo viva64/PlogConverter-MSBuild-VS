@@ -9,7 +9,8 @@ namespace ProgramVerificationSystems.PlogConverter
 {
     public enum ErrorCodeMapping
     {
-        CWE
+        CWE,
+        MISRA
     }
 
     /// <summary>

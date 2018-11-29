@@ -271,6 +271,9 @@ namespace ProgramVerificationSystems.PlogConverter
                                                   Convert.ToUInt32(firstChildValue.Substring(ErrorInfo.CWEPrefix.Length))
                                                 : default(uint);
                     break;
+                case DataColumnNames.ErrorListMisra:
+                    errorInfo.ErrorInfo.MisraId = ErrorInfo.TryParseMisraId(firstChildValue);
+                    break;
                 // Additional values
                 case DataColumnNames.ErrorListFavIcon:
                     errorInfo.FavIcon = Convert.ToBoolean(firstChildValue);
