@@ -27,8 +27,7 @@ namespace ProgramVerificationSystems.PlogConverter
             {
                 // Accepting command-line arguments
                 var parsedArgs = new ParsedArguments { RenderInfo = new RenderInfo() };
-                string errorMessage;
-                var success = AcceptArguments(args, ref parsedArgs, out errorMessage);
+                var success = AcceptArguments(args, ref parsedArgs, out string errorMessage, out string warningMessages);
                 if (!success)
                 {
                     ErrortWriter.WriteLine(errorMessage);
@@ -39,6 +38,9 @@ namespace ProgramVerificationSystems.PlogConverter
                     DefaultWriter.WriteLine(errorMessage);
                     return 0;
                 }
+
+                if (!string.IsNullOrWhiteSpace(warningMessages))
+                    DefaultWriter.WriteLine(warningMessages);
 
                 var renderFactory = new PlogRenderFactory(parsedArgs, Logger);
 
@@ -87,9 +89,11 @@ namespace ProgramVerificationSystems.PlogConverter
             return args != null && args.Length == 1 && args[0] == "--help";
         }
 
-        private static bool AcceptArguments(string[] args, ref ParsedArguments parsedArgs, out string errorMessage)
+        private static bool AcceptArguments(string[] args, ref ParsedArguments parsedArgs, out string errorMessage, out string warningMessages)
         {
             errorMessage = string.Empty;
+            warningMessages = string.Empty;
+
             var converterOptions = new CmdConverterOptions();
             using (var parser = new CmdParser(parsingSettings => { parsingSettings.IgnoreUnknownArguments = false; }))
             {
@@ -166,6 +170,16 @@ namespace ProgramVerificationSystems.PlogConverter
                 && !Utils.TryParseEnumValues<ErrorCodeMapping>(converterOptions.ErrorCodeMapping, errorCodeMappings, out errorMessage))
             {
                 return false;
+            }
+
+            if (errorCodeMappings.Contains(ErrorCodeMapping.MISRA) &&
+                parsedArgs.LevelMap.Any() && 
+                !parsedArgs.LevelMap.Any(item => item.Key == AnalyzerType.MISRA))
+            {
+                if (!string.IsNullOrEmpty(warningMessages))
+                    warningMessages += Environment.NewLine;
+
+                warningMessages += string.Format("MISRA mapping is specified, but MISRA rules group is not enabled. Check the '-{0}' flag.", CmdConverterOptions.AnalyzerLevelFilter_ShortName);
             }
 
             // Check if provided outputNameTemplate is a valid file name

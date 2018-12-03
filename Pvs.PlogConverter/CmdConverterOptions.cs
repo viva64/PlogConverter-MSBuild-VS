@@ -34,11 +34,14 @@ namespace ProgramVerificationSystems.PlogConverter
             + "Transforms relative paths from input logs (starting with |?| marker) to absolute paths in output logs.")]
         public string SrcRoot { get; set; }
 
+        public const char AnalyzerLevelFilter_ShortName = 'a';
+        public const string AnalyzerLevelFilter_LongName = "analyzer";
+
         /// <summary>
         ///     Filter by analyzer type with a list of levels
         /// </summary>
         /// <example>--analyzer=GA:1,2;64:1,2,3</example>
-        [OptionList('a', "analyzer", Separator = ';', Required = false,
+        [OptionList(AnalyzerLevelFilter_ShortName, AnalyzerLevelFilter_LongName, Separator = ';', Required = false,
             HelpText = "Specifies analyzer(s) and level(s) to be used for filtering, i.e. GA:1,2;64:1;OP:1,2,3;CS:1;MISRA:1,2")]
         public IList<string> AnalyzerLevelFilter { get; set; }
 
