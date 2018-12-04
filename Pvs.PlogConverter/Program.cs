@@ -27,7 +27,7 @@ namespace ProgramVerificationSystems.PlogConverter
             {
                 // Accepting command-line arguments
                 var parsedArgs = new ParsedArguments { RenderInfo = new RenderInfo() };
-                var success = AcceptArguments(args, ref parsedArgs, out string errorMessage, out string warningMessages);
+                var success = AcceptArguments(args, ref parsedArgs, out string errorMessage, out IList<string> warningMessages);
                 if (!success)
                 {
                     ErrortWriter.WriteLine(errorMessage);
@@ -39,8 +39,8 @@ namespace ProgramVerificationSystems.PlogConverter
                     return 0;
                 }
 
-                if (!string.IsNullOrWhiteSpace(warningMessages))
-                    DefaultWriter.WriteLine(warningMessages);
+                if (warningMessages.Any())
+                    warningMessages.ToList().ForEach(msg => DefaultWriter.WriteLine(msg));
 
                 var renderFactory = new PlogRenderFactory(parsedArgs, Logger);
 
@@ -89,10 +89,10 @@ namespace ProgramVerificationSystems.PlogConverter
             return args != null && args.Length == 1 && args[0] == "--help";
         }
 
-        private static bool AcceptArguments(string[] args, ref ParsedArguments parsedArgs, out string errorMessage, out string warningMessages)
+        private static bool AcceptArguments(string[] args, ref ParsedArguments parsedArgs, out string errorMessage, out IList<string> warningMessages)
         {
             errorMessage = string.Empty;
-            warningMessages = string.Empty;
+            warningMessages = new List<string>();
 
             var converterOptions = new CmdConverterOptions();
             using (var parser = new CmdParser(parsingSettings => { parsingSettings.IgnoreUnknownArguments = false; }))
@@ -158,7 +158,8 @@ namespace ProgramVerificationSystems.PlogConverter
             ISet<LogRenderType> renderTypes = new HashSet<LogRenderType>();
             if (   converterOptions.PlogRenderTypes != null
                 && converterOptions.PlogRenderTypes.Count > 0
-                && !Utils.TryParseEnumValues<LogRenderType>(converterOptions.PlogRenderTypes, renderTypes, out errorMessage))
+                && !Utils.TryParseEnumValues<LogRenderType>(converterOptions.PlogRenderTypes, renderTypes,
+                    out errorMessage))
             {
                 return false;
             }
@@ -167,7 +168,8 @@ namespace ProgramVerificationSystems.PlogConverter
             ISet<ErrorCodeMapping> errorCodeMappings = new HashSet<ErrorCodeMapping>();
             if (   converterOptions.ErrorCodeMapping != null
                 && converterOptions.ErrorCodeMapping.Count > 0
-                && !Utils.TryParseEnumValues<ErrorCodeMapping>(converterOptions.ErrorCodeMapping, errorCodeMappings, out errorMessage))
+                && !Utils.TryParseEnumValues<ErrorCodeMapping>(converterOptions.ErrorCodeMapping, errorCodeMappings,
+                    out errorMessage))
             {
                 return false;
             }
@@ -176,10 +178,7 @@ namespace ProgramVerificationSystems.PlogConverter
                 parsedArgs.LevelMap.Any() && 
                 !parsedArgs.LevelMap.Any(item => item.Key == AnalyzerType.MISRA))
             {
-                if (!string.IsNullOrEmpty(warningMessages))
-                    warningMessages += Environment.NewLine;
-
-                warningMessages += string.Format("MISRA mapping is specified, but MISRA rules group is not enabled. Check the '-{0}' flag.", CmdConverterOptions.AnalyzerLevelFilter_ShortName);
+                warningMessages.Add(string.Format("MISRA mapping is specified, but MISRA rules group is not enabled. Check the '-{0}' flag.", CmdConverterOptions.AnalyzerLevelFilter_ShortName));
             }
 
             // Check if provided outputNameTemplate is a valid file name
