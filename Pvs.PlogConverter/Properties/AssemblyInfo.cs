@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("OOO \"Program Verification Systems\"")]
 [assembly: AssemblyProduct("Pvs.PlogConverter")]
-[assembly: AssemblyCopyright("(c) OOO 'Program Verification Systems'")]
+[assembly: AssemblyCopyright("(c) 2008-2019 OOO \"Program Verification Systems\"")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
