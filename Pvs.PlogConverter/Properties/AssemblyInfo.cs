@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("PlogConverter")]
+[assembly: AssemblyTitle("Analyzer xml (.plog) log conversion tool")]
 [assembly: AssemblyDescription("Plog's converter for various output formats")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("OOO \"Program Verification Systems\"")]
-[assembly: AssemblyProduct("Pvs.PlogConverter")]
+[assembly: AssemblyProduct("PVS-Studio")]
 [assembly: AssemblyCopyright("Copyright (c) 2008-2019 OOO \"Program Verification Systems\"")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
