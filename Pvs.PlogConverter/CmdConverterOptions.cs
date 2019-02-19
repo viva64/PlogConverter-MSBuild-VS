@@ -5,6 +5,7 @@ using CommandLine;
 using CommandLine.Text;
 using System;
 using ProgramVerificationSystems.PVSStudio.CommonTypes;
+using ProgramVerificationSystems.PVSStudio;
 
 namespace ProgramVerificationSystems.PlogConverter
 {
@@ -76,6 +77,7 @@ namespace ProgramVerificationSystems.PlogConverter
         public string GetUsage()
         {
             var helper = HelpText.AutoBuild(this);
+            helper.AddPreOptionsLine($"{Environment.NewLine}{Resources.AboutPVSStudio}");
             helper.AddPreOptionsLine(string.Format("{0}PlogConverter.exe [options] [log path(s)]", Environment.NewLine));
             helper.Heading = EnvironmentUtils.GetPVSToolHeading();
             return helper;
