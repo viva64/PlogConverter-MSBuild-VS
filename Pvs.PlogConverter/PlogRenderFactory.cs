@@ -1114,7 +1114,6 @@ namespace ProgramVerificationSystems.PlogConverter
             private IList<String> _solutionPaths, _solutionVersions, _plogVersions;
             private const string MergedReportName = "MergedReport",
                 TrialRestriction = "TRIAL RESTRICTION",
-                NoVersionSolution = "10.0", 
                 NO_VERSION_PLOG = "1";
 
             public string LogExtension { get; }
@@ -1156,7 +1155,6 @@ namespace ProgramVerificationSystems.PlogConverter
                 if (!xmlLogs.Any())
                 {
                     _solutionPaths.Add(string.Empty);
-                    _solutionVersions.Add(NoVersionSolution);
                     _plogVersions.Add(NO_VERSION_PLOG);
                 }
                 else
@@ -1168,13 +1166,15 @@ namespace ProgramVerificationSystems.PlogConverter
                             plogXmlDocument.LoadXml(File.ReadAllText(logPath, Encoding.UTF8));
                             var solutionNodeList = plogXmlDocument.SelectNodes("//NewDataSet/Solution_Path");
                             _solutionPaths.Add(solutionNodeList[0]["SolutionPath"].InnerText ?? string.Empty);
-                            _solutionVersions.Add(solutionNodeList[0]["SolutionVersion"].InnerText ?? NoVersionSolution);
+
+                            if (!string.IsNullOrWhiteSpace(solutionNodeList[0]["SolutionVersion"].InnerText))
+                                _solutionVersions.Add(solutionNodeList[0]["SolutionVersion"].InnerText);
+
                             _plogVersions.Add(solutionNodeList[0]["PlogVersion"].InnerText ?? NO_VERSION_PLOG);
                         }
                         catch (XmlException)
                         {
                             _solutionPaths.Add(string.Empty);
-                            _solutionVersions.Add(NoVersionSolution);
                             _plogVersions.Add(NO_VERSION_PLOG);
                         }
                         catch (XPathException e)
@@ -1208,16 +1208,15 @@ namespace ProgramVerificationSystems.PlogConverter
 
                 try
                 {
-                    rw[DataColumnNames.SolutionVer] = _solutionVersions.Select((solutionVersion) => double.Parse(solutionVersion,
-                                                                                                                 CultureInfo.InvariantCulture))
+                    rw[DataColumnNames.SolutionVer] = !_solutionVersions.Any() ? 
+                                                      string.Empty :
+                                                      _solutionVersions.Select((solutionVersion) => double.Parse(solutionVersion, CultureInfo.InvariantCulture))
                                                                        .Max()
                                                                        .ToString("N1",CultureInfo.InvariantCulture);
                 }
                 catch (FormatException)
                 {
-                    rw[DataColumnNames.SolutionVer] =
-                        double.Parse(NoVersionSolution,
-                                     CultureInfo.InvariantCulture);
+                    rw[DataColumnNames.SolutionVer] = string.Empty;
                 }
 
                 rw[DataColumnNames.PlogVersion] = DataTableUtils.PlogVersion;
