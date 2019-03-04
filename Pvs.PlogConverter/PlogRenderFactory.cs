@@ -1114,6 +1114,7 @@ namespace ProgramVerificationSystems.PlogConverter
             private IList<String> _solutionPaths, _solutionVersions, _plogVersions;
             private const string MergedReportName = "MergedReport",
                 TrialRestriction = "TRIAL RESTRICTION",
+                NoVersionSolution = "Independent",
                 NO_VERSION_PLOG = "1";
 
             public string LogExtension { get; }
@@ -1208,15 +1209,15 @@ namespace ProgramVerificationSystems.PlogConverter
 
                 try
                 {
-                    rw[DataColumnNames.SolutionVer] = !_solutionVersions.Any() ? 
-                                                      string.Empty :
+                    rw[DataColumnNames.SolutionVer] = !_solutionVersions.Any() ?
+                                                      NoVersionSolution :
                                                       _solutionVersions.Select((solutionVersion) => double.Parse(solutionVersion, CultureInfo.InvariantCulture))
                                                                        .Max()
                                                                        .ToString("N1",CultureInfo.InvariantCulture);
                 }
                 catch (FormatException)
                 {
-                    rw[DataColumnNames.SolutionVer] = string.Empty;
+                    rw[DataColumnNames.SolutionVer] = NoVersionSolution;
                 }
 
                 rw[DataColumnNames.PlogVersion] = DataTableUtils.PlogVersion;
