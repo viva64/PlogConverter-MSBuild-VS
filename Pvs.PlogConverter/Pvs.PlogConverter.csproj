@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ProgramVerificationSystems.PlogConverter</RootNamespace>
     <AssemblyName>PlogConverter</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <UpgradeBackupLocation>
@@ -100,8 +100,8 @@
       <PVSCmdPath>$(PVSInstallDir)\PVS-Studio_Cmd.exe</PVSCmdPath>
       <PVSErrorMessage>PVS-Studio installation was not found. Installed PVS-Studio is required to build this project.</PVSErrorMessage>
     </PropertyGroup>
-    <Error Text="$(PVSErrorMessage)" Condition="$(PVSInstallDir) == ''"/>
-    <Error Text="$(PVSErrorMessage)" Condition="!Exists($(PVSCmdPath))"/>
+    <Error Text="$(PVSErrorMessage)" Condition="$(PVSInstallDir) == ''" />
+    <Error Text="$(PVSErrorMessage)" Condition="!Exists($(PVSCmdPath))" />
     <Copy Condition="!Exists('$(TargetDir)PVS-Studio_Cmd.exe')" SourceFiles="$(PVSCmdPath)" DestinationFolder="$(TargetDir)" />
   </Target>
 </Project>
