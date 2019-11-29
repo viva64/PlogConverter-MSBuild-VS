@@ -344,7 +344,10 @@ namespace ProgramVerificationSystems.PlogConverter
                         }
                     }
 
-                    analyzerLevelFilterMap.Add(analyzerType, parsedLevels);
+                    analyzerLevelFilterMap.TryGetValue(analyzerType, out ISet<uint> cachedLevels);
+                    parsedLevels.UnionWith(cachedLevels ?? Enumerable.Empty<uint>());
+
+                    analyzerLevelFilterMap[analyzerType] = parsedLevels;
                 }
                 else
                 {
