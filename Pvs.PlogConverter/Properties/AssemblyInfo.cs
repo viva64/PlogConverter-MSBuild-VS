@@ -1,5 +1,5 @@
 //  2006-2008 (c) Viva64.com Team
-//  2008-2019 (c) OOO "Program Verification Systems"
+//  2008-2020 (c) OOO "Program Verification Systems"
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("OOO \"Program Verification Systems\"")]
 [assembly: AssemblyProduct("PVS-Studio")]
-[assembly: AssemblyCopyright("Copyright (c) 2008-2019 OOO \"Program Verification Systems\"")]
+[assembly: AssemblyCopyright("Copyright (c) 2008-2020 OOO \"Program Verification Systems\"")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
