@@ -1,4 +1,4 @@
-//  2006-2008 (c) Viva64.com Team
+﻿//  2006-2008 (c) Viva64.com Team
 //  2008-2020 (c) OOO "Program Verification Systems"
 using System;
 using System.Collections.Generic;
@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using ProgramVerificationSystems.PVSStudio.CommonTypes;
 using CmdParser = CommandLine.Parser;
 using ProgramVerificationSystems.PVSStudio;
+using System.Collections.Concurrent;
 
 namespace ProgramVerificationSystems.PlogConverter
 {
@@ -31,12 +32,12 @@ namespace ProgramVerificationSystems.PlogConverter
                 if (!success)
                 {
                     ErrortWriter.WriteLine(errorMessage);
-                    return 1;
+                    return (int)ConverterRunState.IncorrectArguments;
                 }
                 else if (!string.IsNullOrWhiteSpace(errorMessage))
                 {
                     DefaultWriter.WriteLine(errorMessage);
-                    return 0;
+                    return (int)ConverterRunState.Success;
                 }
 
                 if (warningMessages.Any())
@@ -48,28 +49,42 @@ namespace ProgramVerificationSystems.PlogConverter
                     ? parsedArgs.RenderTypes.ToArray()
                     : Utils.GetEnumValues<LogRenderType>();
 
+                ConcurrentBag<int> filteredErrorsByRenderTypes = new ConcurrentBag<int>();
+
                 var renderTasks = new Task[acceptedRenderTypes.Length];
                 for (var index = 0; index < renderTasks.Length; index++)
                 {
                     var closureIndex = index;
                     renderTasks[index] =
-                        Task.Factory.StartNew(
-                            () =>
-                                renderFactory.GetRenderService(acceptedRenderTypes[closureIndex],
-                                    (renderType, path) =>
-                                        DefaultWriter.WriteLine("{0} output was saved to {1}",
-                                            Enum.GetName(typeof(LogRenderType), renderType), path)).Render());
+                        Task.Factory.StartNew(() =>
+                        { 
+                             var plogRenderer = renderFactory.GetRenderService(acceptedRenderTypes[closureIndex],
+                             (renderType, path) =>
+                                DefaultWriter.WriteLine("{0} output was saved to {1}",
+                                                        Enum.GetName(typeof(LogRenderType), renderType),
+                                                        path));
+
+                             filteredErrorsByRenderTypes.Add(plogRenderer.Errors.Count());
+                             plogRenderer.Render();
+                        });
                 }
 
                 Task.WaitAll(renderTasks);
 
-                return renderFactory.Logger != null ? renderFactory.Logger.ErrorCode : 0;
+                if (renderFactory.Logger != null && renderFactory.Logger.ErrorCode != 0)
+                {
+                    return (int)ConverterRunState.RenderException;
+                }
+                
+                return (int)((   parsedArgs.IndicateWarnings
+                              && filteredErrorsByRenderTypes.Any(errorsByRenderType => errorsByRenderType != 0)) ? ConverterRunState.OutputLogNotEmpty 
+                                                                                                                 : ConverterRunState.Success);
             }
             catch (AggregateException aggrEx)
             {
                 var baseEx = aggrEx.GetBaseException();
                 Logger.LogError(baseEx.ToString());
-                return 1;
+                return (int)ConverterRunState.GeneralException;
             }
             catch (Exception ex)
             {
@@ -80,7 +95,7 @@ namespace ProgramVerificationSystems.PlogConverter
                 else
                     Logger.LogError(ex.ToString());
 
-                return 1;
+                return (int)ConverterRunState.GeneralException;
             }
         }
         
@@ -200,6 +215,7 @@ namespace ProgramVerificationSystems.PlogConverter
             parsedArgs.DisabledErrorCodes = converterOptions.DisabledErrorCodes;
             parsedArgs.SettingsPath = converterOptions.SettingsPath;
             parsedArgs.OutputNameTemplate = converterOptions.OutputNameTemplate;
+            parsedArgs.IndicateWarnings = converterOptions.IndicateWarnings;
 
             errorMessage = string.Empty;
             return true;

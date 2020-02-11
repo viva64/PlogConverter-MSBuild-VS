@@ -1286,6 +1286,7 @@ namespace ProgramVerificationSystems.PlogConverter
         public IList<string> DisabledErrorCodes { get; set; }
         public String SettingsPath { get; set; }
         public String OutputNameTemplate { get; set; }
+        public Boolean IndicateWarnings { get; set; }
     }
 
     public class RenderInfo
