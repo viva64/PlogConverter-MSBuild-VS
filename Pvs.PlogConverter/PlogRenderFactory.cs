@@ -143,6 +143,8 @@ namespace ProgramVerificationSystems.PlogConverter
                     return GetRenderService<PlogTxtRenderer>(renderType, completedAction);
                 case LogRenderType.Csv:
                     return GetRenderService<CsvRenderer>(renderType, completedAction);
+                case LogRenderType.TeamCity:
+                    return GetRenderService<TeamCityPlogRenderer>(renderType, completedAction);
                 default:
                     goto case LogRenderType.Html;
             }
@@ -411,6 +413,127 @@ namespace ProgramVerificationSystems.PlogConverter
             }
         }
 
+        #endregion
+
+        #region Implementation for TeamCity Output
+
+        private sealed class TeamCityPlogRenderer : IPlogRenderer
+        {
+            private const string MergedReportName = "MergedReport";
+            public TeamCityPlogRenderer(RenderInfo renderInfo,
+                                        IEnumerable<ErrorInfoAdapter> errors,
+                                        IEnumerable<ErrorCodeMapping> errorCodeMappings,
+                                        string outputNameTemplate,
+                                        LogRenderType renderType,
+                                        ILogger logger = null)
+            {
+                RenderInfo = renderInfo;
+                Errors = errors;
+                ErrorCodeMappings = errorCodeMappings;
+                OutputNameTemplate = outputNameTemplate;
+                Logger = logger;
+                LogExtension = ReflectionUtils.GetAttributes<DescriptionAttribute, LogRenderType>(renderType.ToString(),
+                                                                                                  BindingFlags.Static | BindingFlags.Public)
+                                              .First().Description;
+            }
+
+            public void Render(Stream writer = null)
+            {
+                try
+                {
+                    if (writer == null)
+                    {
+                        var logName = !string.IsNullOrWhiteSpace(OutputNameTemplate)
+                            ? OutputNameTemplate
+                            : (RenderInfo.Logs.Count == 1
+                                ? Path.GetFileName(RenderInfo.Logs.First())
+                                : MergedReportName);
+                        var destDir = RenderInfo.OutputDir;
+                        var tsPath = Path.Combine(destDir, string.Format("{0}{1}", logName, LogExtension));
+                        writer = new FileStream(tsPath, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
+                    }
+
+                    using (TextWriter tsWriter = new StreamWriter(writer))
+                    {
+                        if (Errors != null && Errors.Any())
+                        {
+                            WriteIssuesToStream(tsWriter);
+                        }
+                        else
+                            tsWriter.WriteLine(NoMessage);
+
+                        if (writer is FileStream)
+                            OnRenderComplete(new RenderCompleteEventArgs((writer as FileStream).Name));
+                    }
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    if (Logger != null)
+                    {
+                        Logger.ErrorCode = 1;
+                        Logger.LogError(ex.Message);
+                    }
+                    else
+                        Console.Error.WriteLine(ex.Message);
+                }
+            }
+
+            private void WriteIssuesToStream(TextWriter writer)
+            {
+                foreach (var error in Errors)
+                {
+                    String securityMessage = String.Empty;
+                    foreach (var security in ErrorCodeMappings)
+                    {
+                        if (security == ErrorCodeMapping.CWE)
+                        {
+                            securityMessage = error.ErrorInfo.ToCWEString();
+                            break;
+                        }
+                        else if (security == ErrorCodeMapping.MISRA)
+                        {
+                            securityMessage = error.ErrorInfo.ToMISRAString();
+                            break;
+                        }
+                    }
+
+                    String message = String.Format("{0}{1}",
+                                                   String.IsNullOrWhiteSpace(securityMessage) ? String.Empty
+                                                                                              : $"{securityMessage} ",
+                                                   error.ErrorInfo.Message.Replace('\'', '"'));
+
+                    String errorURL = ErrorCodeUrlHelper.GetVivaUrlCode(error.ErrorInfo.ErrorCode, false);
+
+                    bool isSrcRootEmpty = String.IsNullOrWhiteSpace(RenderInfo.SrcRoot);
+                    String filePath = error.ErrorInfo.FileName.Replace(Utils.SourceTreeRootMarker,
+                                                                       isSrcRootEmpty ? String.Empty
+                                                                                      : RenderInfo.SrcRoot.Trim('"').TrimEnd('\\'));
+                    if (isSrcRootEmpty)
+                        filePath = PathUtils.NormalizePath(filePath) ?? filePath;
+
+                    writer.WriteLine($"##teamcity[inspectionType id='{error.ErrorInfo.ErrorCode}' name='{error.ErrorInfo.ErrorCode}' description='{errorURL}' category='{(ErrorCategory)error.ErrorInfo.Level}']");
+                    writer.WriteLine($"##teamcity[inspection typeId='{error.ErrorInfo.ErrorCode}' message='{message}' file='{filePath}' line='{error.ErrorInfo.LineNumber}' SEVERITY='ERROR']");
+                }
+            }
+
+            private void OnRenderComplete(RenderCompleteEventArgs renderComplete)
+            {
+                RenderComplete?.Invoke(this, renderComplete);
+            }
+
+            enum ErrorCategory
+            {
+                Fails, High, Medium, Low
+            }
+
+            public string LogExtension { get; }
+            public RenderInfo RenderInfo { get; private set; }
+            public IEnumerable<ErrorInfoAdapter> Errors { get; private set; }
+            public IEnumerable<ErrorCodeMapping> ErrorCodeMappings { get; private set; }
+            private string OutputNameTemplate { get; set; }
+            public ILogger Logger { get; private set; }
+            public event EventHandler<RenderCompleteEventArgs> RenderComplete;
+        }
         #endregion
 
         #region Implementation for Html Output
