@@ -480,6 +480,8 @@ namespace ProgramVerificationSystems.PlogConverter
 
             private void WriteIssuesToStream(TextWriter writer)
             {
+                var inspectionsIDs = new HashSet<String>();
+
                 foreach (var error in Errors)
                 {
                     String securityMessage = String.Empty;
@@ -497,12 +499,18 @@ namespace ProgramVerificationSystems.PlogConverter
                         }
                     }
 
-                    String message = String.Format("{0}{1}",
-                                                   String.IsNullOrWhiteSpace(securityMessage) ? String.Empty
-                                                                                              : $"{securityMessage} ",
-                                                   error.ErrorInfo.Message.Replace('\'', '"'));
+                    if (!inspectionsIDs.Contains(error.ErrorInfo.ErrorCode))
+                    {
+                        inspectionsIDs.Add(error.ErrorInfo.ErrorCode);
 
-                    String errorURL = ErrorCodeUrlHelper.GetVivaUrlCode(error.ErrorInfo.ErrorCode, false);
+                        String errorURL = ErrorCodeUrlHelper.GetVivaUrlCode(error.ErrorInfo.ErrorCode, false);
+                        writer.WriteLine($"##teamcity[inspectionType id='{error.ErrorInfo.ErrorCode}' name='{error.ErrorInfo.ErrorCode}' description='{errorURL}' category='{(ErrorCategory)error.ErrorInfo.Level}']");
+                    }
+
+                    String message = EscapeMessage(String.Format("{0}{1}",
+                                                                 String.IsNullOrWhiteSpace(securityMessage) ? String.Empty
+                                                                                                            : $"{securityMessage} ",
+                                                                                                              error.ErrorInfo.Message));
 
                     bool isSrcRootEmpty = String.IsNullOrWhiteSpace(RenderInfo.SrcRoot);
                     String filePath = error.ErrorInfo.FileName.Replace(Utils.SourceTreeRootMarker,
@@ -511,8 +519,21 @@ namespace ProgramVerificationSystems.PlogConverter
                     if (isSrcRootEmpty)
                         filePath = PathUtils.NormalizePath(filePath) ?? filePath;
 
-                    writer.WriteLine($"##teamcity[inspectionType id='{error.ErrorInfo.ErrorCode}' name='{error.ErrorInfo.ErrorCode}' description='{errorURL}' category='{(ErrorCategory)error.ErrorInfo.Level}']");
+                    if (String.IsNullOrEmpty(filePath))
+                        filePath = " ";
+
                     writer.WriteLine($"##teamcity[inspection typeId='{error.ErrorInfo.ErrorCode}' message='{message}' file='{filePath}' line='{error.ErrorInfo.LineNumber}' SEVERITY='ERROR']");
+                }
+
+                String EscapeMessage(String messageToEscape)
+                {
+                    return  new StringBuilder(messageToEscape).Replace("|",  "||")
+                                                              .Replace("'",  "|'")
+                                                              .Replace("[",  "|[")
+                                                              .Replace("]",  "|]")
+                                                              .Replace("\r", "|r")
+                                                              .Replace("\n", "|n")
+                                                              .ToString();
                 }
             }
 
@@ -520,7 +541,6 @@ namespace ProgramVerificationSystems.PlogConverter
             {
                 RenderComplete?.Invoke(this, renderComplete);
             }
-
             enum ErrorCategory
             {
                 Fails, High, Medium, Low
