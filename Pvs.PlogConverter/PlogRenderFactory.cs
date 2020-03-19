@@ -516,7 +516,7 @@ namespace ProgramVerificationSystems.PlogConverter
                     String filePath = error.ErrorInfo.FileName.Replace(Utils.SourceTreeRootMarker,
                                                                        isSrcRootEmpty ? String.Empty
                                                                                       : RenderInfo.SrcRoot.Trim('"').TrimEnd('\\'));
-                    if (isSrcRootEmpty)
+                    if (!isSrcRootEmpty)
                         filePath = PathUtils.NormalizePath(filePath) ?? filePath;
 
                     if (String.IsNullOrEmpty(filePath))
