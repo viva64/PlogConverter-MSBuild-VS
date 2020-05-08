@@ -1286,7 +1286,8 @@ namespace ProgramVerificationSystems.PlogConverter
                 var isSrcRootEmpty = String.IsNullOrWhiteSpace(RenderInfo.SrcRoot);
                 foreach (var error in Errors)
                 {
-                    var filePath = error.ErrorInfo.FileName.Replace(Utils.SourceTreeRootMarker, isSrcRootEmpty ? String.Empty : RenderInfo.SrcRoot.Trim('"').TrimEnd('\\'));
+                    var filePath = isSrcRootEmpty ? error.ErrorInfo.FileName
+                                                  : error.ErrorInfo.FileName.Replace(Utils.SourceTreeRootMarker, RenderInfo.SrcRoot.Trim('"').TrimEnd('\\'));
                     error.ErrorInfo.FileName = isSrcRootEmpty ? filePath : (PathUtils.NormalizePath(filePath) ?? filePath);
                 }
 
