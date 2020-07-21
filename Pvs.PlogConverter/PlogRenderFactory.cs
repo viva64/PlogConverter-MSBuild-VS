@@ -1186,7 +1186,12 @@ namespace ProgramVerificationSystems.PlogConverter
                             lock (locker)
                                 output += e.Data + Environment.NewLine;
                         };
-                        htmlGenerator.StartInfo.FileName = Path.Combine(EnvironmentUtils.GetModuleDirectory(), "HtmlGenerator.exe");
+
+                        string htmlGenPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "HtmlGenerator.exe");
+                        if (!File.Exists(htmlGenPath))
+                            htmlGenPath = Path.Combine(EnvironmentUtils.GetModuleDirectory(), "HtmlGenerator.exe");
+                        
+                        htmlGenerator.StartInfo.FileName = htmlGenPath;
                         htmlGenerator.StartInfo.Arguments = $" \"{jsonLog}\" -t fullhtml -o \"{Path.Combine(RenderInfo.OutputDir, OutputNameTemplate).TrimEnd(new char[] { '\\', '/' })}\" -r \"{RenderInfo.SrcRoot.TrimEnd(new char[] { '\\', '/' })}\" -a \"GA;64;OP;CS;MISRA\"";
                         
                         foreach (var security in ErrorCodeMappings)
