@@ -214,82 +214,85 @@ namespace ProgramVerificationSystems.PlogConverter
 
             for (var j = 0; j < messageNodes.Count; j++)
             {
-                var nodeName = messageNodes[j].Name;
-                var firstChildValue = messageNodes[j].HasChildNodes ? messageNodes[j].FirstChild.Value : string.Empty;
-                SetErrorValue(nodeName, errorInfo, firstChildValue);
+                SetErrorValue(messageNodes[j], errorInfo);
             }
 
             return errorInfo;
         }
 
-        private static void SetErrorValue(string nodeName, ErrorInfoAdapter errorInfo, string firstChildValue)
+        private static void SetErrorValue(XmlNode messageNode, ErrorInfoAdapter errorInfo)
         {
-            switch (nodeName)
+            XmlNodeList childNodes = messageNode.ChildNodes;
+            string firstChildContent = childNodes.Count > 0 ? childNodes.Item(0).Value : string.Empty;
+            switch (messageNode.Name)
             {
                 case DataColumnNames.ErrorListAnalyzer:
-                    errorInfo.ErrorInfo.AnalyzerType = (AnalyzerType)Enum.Parse(typeof(AnalyzerType), firstChildValue);
+                    errorInfo.ErrorInfo.AnalyzerType = (AnalyzerType)Enum.Parse(typeof(AnalyzerType), firstChildContent);
                     break;
                 case DataColumnNames.ErrorListCodeCurrent:
-                    errorInfo.ErrorInfo.CodeCurrent = Convert.ToUInt32(firstChildValue);
+                    errorInfo.ErrorInfo.CodeCurrent = Convert.ToUInt32(firstChildContent);
                     break;
                 case DataColumnNames.ErrorListCodeNext:
-                    errorInfo.ErrorInfo.CodeNext = Convert.ToUInt32(firstChildValue);
+                    errorInfo.ErrorInfo.CodeNext = Convert.ToUInt32(firstChildContent);
                     break;
                 case DataColumnNames.ErrorListCodePrev:
-                    errorInfo.ErrorInfo.CodePrev = Convert.ToUInt32(firstChildValue);
+                    errorInfo.ErrorInfo.CodePrev = Convert.ToUInt32(firstChildContent);
                     break;
                 case DataColumnNames.ErrorListErrorCode:
-                    errorInfo.ErrorInfo.ErrorCode = firstChildValue;
+                    errorInfo.ErrorInfo.ErrorCode = firstChildContent;
                     break;
                 case DataColumnNames.ErrorListFalseAlarm:
-                    errorInfo.ErrorInfo.FalseAlarmMark = Convert.ToBoolean(firstChildValue);
+                    errorInfo.ErrorInfo.FalseAlarmMark = Convert.ToBoolean(firstChildContent);
                     break;
                 case DataColumnNames.ErrorListFile:
-                    errorInfo.ErrorInfo.FileName = firstChildValue;
+                    errorInfo.ErrorInfo.FileName = firstChildContent;
                     break;
                 case DataColumnNames.ErrorListRetired:
-                    errorInfo.ErrorInfo.IsRetired = Convert.ToBoolean(firstChildValue);
+                    errorInfo.ErrorInfo.IsRetired = Convert.ToBoolean(firstChildContent);
                     break;
                 case DataColumnNames.ErrorListLevel:
-                    errorInfo.ErrorInfo.Level = Convert.ToUInt32(firstChildValue);
+                    errorInfo.ErrorInfo.Level = Convert.ToUInt32(firstChildContent);
                     break;
                 case DataColumnNames.ErrorListLine:
-                    errorInfo.ErrorInfo.LineNumber = Convert.ToInt32(firstChildValue);
+                    errorInfo.ErrorInfo.LineNumber = Convert.ToInt32(firstChildContent);
                     break;
-                case DataColumnNames.ErrorListLineExtension:
-                    errorInfo.ErrorInfo.LineNumberExtension = new List<int>(firstChildValue.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                                                                                           .Select(item => Convert.ToInt32(item)));
+                case DataColumnNames.ErrorListPositions:
+                    // OuterXml is needed because the xml string for XmlTextReader must have only one root element
+                    var xmlReader = new XmlTextReader(new StringReader(messageNode.OuterXml));
+                    // Reading the root elemnet 'Positions'
+                    xmlReader.Read();
+                    ((IXmlSerializable)errorInfo.ErrorInfo.Positions).ReadXml(xmlReader);
                     break;
                 case DataColumnNames.ErrorListMessage:
-                    errorInfo.ErrorInfo.Message = firstChildValue;
+                    errorInfo.ErrorInfo.Message = firstChildContent;
                     break;
                 case DataColumnNames.ErrorListTrial:
-                    errorInfo.ErrorInfo.TrialMode = Convert.ToBoolean(firstChildValue);
+                    errorInfo.ErrorInfo.TrialMode = Convert.ToBoolean(firstChildContent);
                     break;
                 case DataColumnNames.ErrorListCwe:
-                    errorInfo.ErrorInfo.CweId = (firstChildValue.StartsWith(ErrorInfo.CWEPrefix) && firstChildValue.Length >= (ErrorInfo.CWEPrefix.Length + 1)) ?
-                                                  Convert.ToUInt32(firstChildValue.Substring(ErrorInfo.CWEPrefix.Length))
+                    errorInfo.ErrorInfo.CweId = (firstChildContent.StartsWith(ErrorInfo.CWEPrefix) && firstChildContent.Length >= (ErrorInfo.CWEPrefix.Length + 1)) ?
+                                                  Convert.ToUInt32(firstChildContent.Substring(ErrorInfo.CWEPrefix.Length))
                                                 : default(uint);
                     break;
                 case DataColumnNames.ErrorListMisra:
-                    errorInfo.ErrorInfo.MisraId = ErrorInfo.TryParseMisraId(firstChildValue);
+                    errorInfo.ErrorInfo.MisraId = ErrorInfo.TryParseMisraId(firstChildContent);
                     break;
                 // Additional values
                 case DataColumnNames.ErrorListFavIcon:
-                    errorInfo.FavIcon = Convert.ToBoolean(firstChildValue);
+                    errorInfo.FavIcon = Convert.ToBoolean(firstChildContent);
                     break;
                 case DataColumnNames.ErrorListOrder:
-                    errorInfo.DefaultOrder = Convert.ToInt32(firstChildValue);
+                    errorInfo.DefaultOrder = Convert.ToInt32(firstChildContent);
                     break;
                 case DataColumnNames.ErrorListProject:
-                    errorInfo.Project = firstChildValue;
-                    errorInfo.ErrorInfo.ProjectNames = firstChildValue.Split(DataTableUtils.ProjectNameSeparator).ToList();
+                    errorInfo.Project = firstChildContent;
+                    errorInfo.ErrorInfo.ProjectNames = firstChildContent.Split(DataTableUtils.ProjectNameSeparator).ToList();
                     break;
                 case DataColumnNames.ErrorListShortFile:
-                    errorInfo.ShortFile = firstChildValue;
+                    errorInfo.ShortFile = firstChildContent;
                     break;
                 case DataColumnNames.ErrorListAnalyzedSourceFiles:
-                    errorInfo.ErrorInfo.AnalyzedSourceFiles = firstChildValue.Split(DataTableUtils.AnalyzedSourceFileSeparator).ToList();
+                    errorInfo.ErrorInfo.AnalyzedSourceFiles = firstChildContent.Split(DataTableUtils.AnalyzedSourceFileSeparator).ToList();
                     break;
             }
         }
