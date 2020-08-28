@@ -1,6 +1,8 @@
-Plog Converter
+Plog Converter for Windows
 ===============================
 ![Platforms](https://img.shields.io/badge/platform-windows-green)
+
+**Note**. This page is about the tool for Windows. The appropriate page about the tool for Linux and macOS [is available here](https://github.com/viva64/plog-converter).
 
 To convert the analyzer bug report to different formats (xml, tasks and so on) you can use the Plog Converter.
 It is applicable for working scenario with MSBuild\Visual Studio projects on Windows (C++, C#). 
