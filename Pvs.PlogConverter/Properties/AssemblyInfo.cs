@@ -10,9 +10,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Analyzer xml (.plog) log conversion tool")]
 [assembly: AssemblyDescription("Plog's converter for various output formats")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("OOO \"Program Verification Systems\"")]
+[assembly: AssemblyCompany("PVS-Studio LLC")]
 [assembly: AssemblyProduct("PVS-Studio")]
-[assembly: AssemblyCopyright("Copyright (c) 2008-2020 OOO \"Program Verification Systems\"")]
+[assembly: AssemblyCopyright("Copyright (c) 2008-2020 PVS-Studio LLC")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
