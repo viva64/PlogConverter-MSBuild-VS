@@ -132,15 +132,15 @@ namespace ProgramVerificationSystems.PlogConverter
                             Encoding currentIncodingLocal = logfileStream.CurrentEncoding;
                             bool isIncodedLocal = isEncoded;
 
-                            var errorsTask = new Task<IEnumerable<ErrorInfo>>(() => ErrorInfo.ProcessAnalyzerOutput(String.Empty,
-                                                                                                                    String.Empty,
-                                                                                                                    String.Empty,
-                                                                                                                    linesText,
-                                                                                                                    isIncodedLocal,
-                                                                                                                    currentIncodingLocal,
-                                                                                                                    null,
-                                                                                                                    out preprocessedFilesDependencies,
-                                                                                                                    String.Empty));
+                            var errorsTask = new Task<IEnumerable<ErrorInfo>>(() => ErrorInfoExtentions.ProcessAnalyzerOutput(String.Empty,
+                                                                                                                              String.Empty,
+                                                                                                                              String.Empty,
+                                                                                                                              linesText,
+                                                                                                                              isIncodedLocal,
+                                                                                                                              currentIncodingLocal,
+                                                                                                                              null,
+                                                                                                                              out preprocessedFilesDependencies,
+                                                                                                                              String.Empty));
                             errorsTask.Start();
                             tasksQueue.Enqueue(errorsTask);
 
