@@ -146,6 +146,8 @@ namespace ProgramVerificationSystems.PlogConverter
                     return GetRenderService<CsvRenderer>(renderType, completedAction);
                 case LogRenderType.TeamCity:
                     return GetRenderService<TeamCityPlogRenderer>(renderType, completedAction);
+                case LogRenderType.Sarif:
+                    return GetRenderService<SarifRenderer>(renderType, completedAction);
                 default:
                     goto case LogRenderType.Html;
             }
@@ -1131,19 +1133,19 @@ namespace ProgramVerificationSystems.PlogConverter
 
         #endregion
 
-        #region Implementation for FullHtml Output
+        #region BaseRender
 
-        private sealed class FullHtmlRenderer : IPlogRenderer
+        private abstract class BaseRender : IPlogRenderer
         {
             public RenderInfo RenderInfo { get; private set; }
             public IEnumerable<ErrorInfoAdapter> Errors { get; private set; }
             public IEnumerable<ErrorCodeMapping> ErrorCodeMappings { get; private set; }
-            private string OutputNameTemplate { get; set; }
+            protected string OutputNameTemplate { get; set; }
             public ILogger Logger { get; private set; }
 
             public string LogExtension { get; }
 
-            public FullHtmlRenderer(RenderInfo renderInfo,
+            public BaseRender(RenderInfo renderInfo,
                                    IEnumerable<ErrorInfoAdapter> errors,
                                    IEnumerable<ErrorCodeMapping> errorCodeMappings,
                                    string outputNameTemplate,
@@ -1160,91 +1162,89 @@ namespace ProgramVerificationSystems.PlogConverter
                                               .First().Description;
             }
 
-            public void Render(Stream writer = null)
+            private static string SaveErrorsToTempJsonFile(IEnumerable<ErrorInfoAdapter> errors)
             {
                 string jsonLog = Path.GetTempFileName() + ".json";
+                JsonPvsReport jsonReport = new JsonPvsReport();
+                jsonReport.AddRange(errors.Select(item => item.ErrorInfo));
+                File.WriteAllText(jsonLog, JsonConvert.SerializeObject(jsonReport, Newtonsoft.Json.Formatting.Indented), Encoding.UTF8);
+                return jsonLog;
+            }
 
+            private static string GetHtmlGenPath()
+            {
+                const string htmlGenExeName = "HtmlGenerator.exe";
+                string htmlGenPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), htmlGenExeName);
+                if (!File.Exists(htmlGenPath))
+                    htmlGenPath = Path.Combine(EnvironmentUtils.GetModuleDirectory(), htmlGenExeName);
+                return htmlGenPath;
+            }
+
+            private void Log(string data)
+            {
+                if (Logger != null)
+                {
+                    Logger.ErrorCode = 1;
+                    Logger.LogError(data);
+                }
+                else
+                    Console.Error.WriteLine(data);
+            }
+
+            private void ExecuteHtmlGenerator(string arguments)
+            {
+                using (Process htmlGenerator = new Process())
+                {
+                    var output = string.Empty;
+                    var locker = new object();
+                    DataReceivedEventHandler handler = delegate (object sender, DataReceivedEventArgs e)
+                    {
+                        lock (locker)
+                            output += e.Data + Environment.NewLine;
+                    };
+
+                    htmlGenerator.StartInfo.FileName = GetHtmlGenPath();
+                    htmlGenerator.StartInfo.Arguments = arguments;
+                    htmlGenerator.StartInfo.UseShellExecute = false;
+                    htmlGenerator.StartInfo.CreateNoWindow = true;
+                    htmlGenerator.StartInfo.RedirectStandardError = true;
+                    htmlGenerator.ErrorDataReceived += handler;
+                    htmlGenerator.Start();
+                    htmlGenerator.BeginErrorReadLine();
+                    htmlGenerator.WaitForExit();
+
+                    if (htmlGenerator.ExitCode != 0 && !string.IsNullOrEmpty(output.Trim()))
+                    {
+                        Log(output);
+                    }
+                }
+            }
+
+            abstract protected (string, string) GetGenerateData(string jsonLog);
+            public void Render(Stream writer = null)
+            {
+                string jsonLog = "";
                 try
                 {
-                    string defaultFullHtmlDir = Path.Combine(RenderInfo.OutputDir, "fullhtml");
-                    if (!string.IsNullOrEmpty(OutputNameTemplate))
-                        defaultFullHtmlDir = Path.Combine(RenderInfo.OutputDir, OutputNameTemplate);
-
-                    if (Directory.Exists(defaultFullHtmlDir))
-                        Directory.Delete(defaultFullHtmlDir, true);
-
-                    JsonPvsReport jsonReport = new JsonPvsReport();
-                    jsonReport.AddRange(Errors.Select(item => item.ErrorInfo));
-
-                    File.WriteAllText(jsonLog, JsonConvert.SerializeObject(jsonReport, Newtonsoft.Json.Formatting.Indented), Encoding.UTF8);
-
-                    using (Process htmlGenerator = new Process())
-                    {
-                        var output = string.Empty;
-                        var locker = new object();
-                        DataReceivedEventHandler handler = delegate (object sender, DataReceivedEventArgs e)
-                        {
-                            lock (locker)
-                                output += e.Data + Environment.NewLine;
-                        };
-
-                        string htmlGenPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "HtmlGenerator.exe");
-                        if (!File.Exists(htmlGenPath))
-                            htmlGenPath = Path.Combine(EnvironmentUtils.GetModuleDirectory(), "HtmlGenerator.exe");
-                        
-                        htmlGenerator.StartInfo.FileName = htmlGenPath;
-                        htmlGenerator.StartInfo.Arguments = $" \"{jsonLog}\" -t fullhtml -o \"{Path.Combine(RenderInfo.OutputDir, OutputNameTemplate).TrimEnd(new char[] { '\\', '/' })}\" -r \"{RenderInfo.SrcRoot.TrimEnd(new char[] { '\\', '/' })}\" -a \"GA;64;OP;CS;MISRA\"";
-                        
-                        foreach (var security in ErrorCodeMappings)
-                            htmlGenerator.StartInfo.Arguments += " -m " + security.ToString().ToLower();
-
-                        htmlGenerator.StartInfo.UseShellExecute = false;
-                        htmlGenerator.StartInfo.CreateNoWindow = true;
-                        htmlGenerator.StartInfo.RedirectStandardError = true;
-                        htmlGenerator.ErrorDataReceived += handler;
-                        htmlGenerator.Start();
-                        htmlGenerator.BeginErrorReadLine();
-                        htmlGenerator.WaitForExit();
-
-                        if (htmlGenerator.ExitCode != 0 && !string.IsNullOrEmpty(output.Trim()))
-                        {
-                            if (Logger != null)
-                            {
-                                Logger.ErrorCode = 1;
-                                Logger.LogError(output);
-                            }
-                            else
-                                Console.Error.WriteLine(output);
-                        }
-                    }
-
-                    OnRenderComplete(new RenderCompleteEventArgs(defaultFullHtmlDir));
+                    jsonLog = SaveErrorsToTempJsonFile(Errors);
+                    var (arguments, outputFile) = GetGenerateData(jsonLog);
+                    ExecuteHtmlGenerator(arguments);
+                    OnRenderComplete(new RenderCompleteEventArgs(outputFile));
                 }
                 catch (UnauthorizedAccessException ex)
                 {
-                    if (Logger != null)
-                    {
-                        Logger.ErrorCode = 1;
-                        Logger.LogError(ex.Message);
-                    }
-                    else
-                        Console.Error.WriteLine(ex.Message);
+                    Log(ex.Message);
                 }
                 catch (IOException ex)
                 {
-                    if (Logger != null)
-                    {
-                        Logger.ErrorCode = 1;
-                        Logger.LogError(ex.Message);
-                    }
-                    else
-                        Console.Error.WriteLine(ex.Message);
+                    Log(ex.Message);
                 }
                 finally
                 {
                     File.Delete(jsonLog);
                 }
             }
+
 
             public event EventHandler<RenderCompleteEventArgs> RenderComplete;
 
@@ -1256,8 +1256,37 @@ namespace ProgramVerificationSystems.PlogConverter
 
         #endregion
 
+        #region Implementation for FullHtml Output
+
+        private sealed class FullHtmlRenderer : BaseRender
+        {
+            public FullHtmlRenderer(RenderInfo renderInfo, IEnumerable<ErrorInfoAdapter> errors, IEnumerable<ErrorCodeMapping> errorCodeMappings,
+                                   string outputNameTemplate, LogRenderType renderType,ILogger logger = null) 
+                : base(renderInfo, errors, errorCodeMappings, outputNameTemplate, renderType, logger)
+            {
+            }
+
+            protected override (string, string) GetGenerateData(string jsonLog)
+            {
+                string defaultFullHtmlDir = Path.Combine(RenderInfo.OutputDir, "fullhtml");
+                if (!string.IsNullOrEmpty(OutputNameTemplate))
+                    defaultFullHtmlDir = Path.Combine(RenderInfo.OutputDir, OutputNameTemplate);
+
+                if (Directory.Exists(defaultFullHtmlDir))
+                    Directory.Delete(defaultFullHtmlDir, true);
+
+                string arguments = $" \"{jsonLog}\" -t fullhtml -o \"{Path.Combine(RenderInfo.OutputDir, OutputNameTemplate).TrimEnd(new char[] { '\\', '/' })}\" -r \"{RenderInfo.SrcRoot.TrimEnd(new char[] { '\\', '/' })}\" -a \"GA;64;OP;CS;MISRA\"";
+                foreach (var security in ErrorCodeMappings)
+                    arguments += " -m " + security.ToString().ToLower();
+
+                return (arguments, defaultFullHtmlDir);
+            }
+        }
+
+         #endregion
+
         #region Implementation for Plog-to-Plog Output
-        
+
         private sealed class PlogToPlogRenderer : IPlogRenderer
         {
             private IList<String> _solutionPaths, _solutionVersions, _plogVersions;
@@ -1423,7 +1452,32 @@ namespace ProgramVerificationSystems.PlogConverter
                 }
             }
         }
-        
+
+        #endregion
+
+        #region Generate SARIF
+
+        private sealed class SarifRenderer : BaseRender
+        {
+            public SarifRenderer(RenderInfo renderInfo, IEnumerable<ErrorInfoAdapter> errors, IEnumerable<ErrorCodeMapping> errorCodeMappings,
+                                   string outputNameTemplate, LogRenderType renderType, ILogger logger = null) 
+                : base(renderInfo, errors, errorCodeMappings, outputNameTemplate, renderType, logger)
+            {
+            }
+ 
+            protected override (string, string) GetGenerateData(string jsonLog)
+            {
+                var logName = !string.IsNullOrWhiteSpace(OutputNameTemplate) ? OutputNameTemplate : (RenderInfo.Logs.Any() ? Path.GetFileName(RenderInfo.Logs.First()) : "out");
+                var fileName = Path.Combine(RenderInfo.OutputDir, $"{logName}{LogExtension}").TrimEnd(new char[] { '\\', '/' });
+                var sourceRoot = RenderInfo.SrcRoot.TrimEnd(new char[] { '\\', '/' });
+                string arguments = $" \"{jsonLog}\" -t sarif -o \"{fileName}\" -r \"{sourceRoot}\" -a \"GA;64;OP;CS;MISRA\"";
+                foreach (var security in ErrorCodeMappings)
+                    arguments += " -m " + security.ToString().ToLower();
+
+                return (arguments, fileName);
+            }
+        }
+
         #endregion
     }
 
