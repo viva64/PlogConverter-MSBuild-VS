@@ -1135,7 +1135,7 @@ namespace ProgramVerificationSystems.PlogConverter
 
         #region BaseRender
 
-        private abstract class BaseRender : IPlogRenderer
+        private abstract class BaseHtmlGeneratorRender : IPlogRenderer
         {
             public RenderInfo RenderInfo { get; private set; }
             public IEnumerable<ErrorInfoAdapter> Errors { get; private set; }
@@ -1145,7 +1145,7 @@ namespace ProgramVerificationSystems.PlogConverter
 
             public string LogExtension { get; }
 
-            public BaseRender(RenderInfo renderInfo,
+            public BaseHtmlGeneratorRender(RenderInfo renderInfo,
                                    IEnumerable<ErrorInfoAdapter> errors,
                                    IEnumerable<ErrorCodeMapping> errorCodeMappings,
                                    string outputNameTemplate,
@@ -1258,7 +1258,7 @@ namespace ProgramVerificationSystems.PlogConverter
 
         #region Implementation for FullHtml Output
 
-        private sealed class FullHtmlRenderer : BaseRender
+        private sealed class FullHtmlRenderer : BaseHtmlGeneratorRender
         {
             public FullHtmlRenderer(RenderInfo renderInfo, IEnumerable<ErrorInfoAdapter> errors, IEnumerable<ErrorCodeMapping> errorCodeMappings,
                                    string outputNameTemplate, LogRenderType renderType,ILogger logger = null) 
@@ -1457,7 +1457,7 @@ namespace ProgramVerificationSystems.PlogConverter
 
         #region Generate SARIF
 
-        private sealed class SarifRenderer : BaseRender
+        private sealed class SarifRenderer : BaseHtmlGeneratorRender
         {
             public SarifRenderer(RenderInfo renderInfo, IEnumerable<ErrorInfoAdapter> errors, IEnumerable<ErrorCodeMapping> errorCodeMappings,
                                    string outputNameTemplate, LogRenderType renderType, ILogger logger = null) 
