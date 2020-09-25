@@ -69,7 +69,7 @@ namespace ProgramVerificationSystems.PlogConverter
         /// </summary>
         /// <example>--renderTypes=Html,Totals,Txt,Csv,Plog</example>
         [OptionList('t', "renderTypes", Separator = ',', Required = false,
-            HelpText = "Render types for output. Supported renderers: Html,FullHtml,Totals,Txt,Csv,Tasks,Plog,TeamCity")]
+            HelpText = "Render types for output. Supported renderers: Html,FullHtml,Totals,Txt,Csv,Tasks,Plog,TeamCity,Sarif,JSON")]
         public IList<string> PlogRenderTypes { get; set; }
 
         /// <summary>

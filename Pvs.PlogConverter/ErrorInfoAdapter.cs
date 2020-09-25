@@ -66,8 +66,6 @@ namespace ProgramVerificationSystems.PlogConverter
 
         public bool FavIcon { get; set; }
         public int DefaultOrder { get; set; }
-        public string Project { get; set; }
-        public string ShortFile { get; set; }
 
         #endregion
     }

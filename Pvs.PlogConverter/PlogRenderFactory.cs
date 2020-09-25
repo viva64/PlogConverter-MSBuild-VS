@@ -148,9 +148,18 @@ namespace ProgramVerificationSystems.PlogConverter
                     return GetRenderService<TeamCityPlogRenderer>(renderType, completedAction);
                 case LogRenderType.Sarif:
                     return GetRenderService<SarifRenderer>(renderType, completedAction);
+                case LogRenderType.JSON:
+                    return GetRenderService<PlogJsonRenderer>(renderType, completedAction);
                 default:
                     goto case LogRenderType.Html;
             }
+        }
+
+        public static void SaveErrorsToJsonFile(IEnumerable<ErrorInfoAdapter> errors, string jsonLogPath)
+        {
+            JsonPvsReport jsonReport = new JsonPvsReport();
+            jsonReport.AddRange(errors.Select(item => item.ErrorInfo));
+            File.WriteAllText(jsonLogPath, JsonConvert.SerializeObject(jsonReport, Newtonsoft.Json.Formatting.Indented), Encoding.UTF8);
         }
 
         #region Implementation for CSV Output
@@ -251,8 +260,8 @@ namespace ProgramVerificationSystems.PlogConverter
                             messageRow.AddRange(new List<string>
                             {
                                 error.ErrorInfo.Message,
-                                error.Project,
-                                error.ShortFile,
+                                String.Join("%", error.ErrorInfo.ProjectNames.ToArray()),
+                                Path.GetFileName(error.ErrorInfo.FileName),
                                 error.ErrorInfo.LineNumber.ToString(),
                                 error.ErrorInfo.FalseAlarmMark.ToString(),
                                 isSrcRootEmpty ? filePath: (PathUtils.NormalizePath(filePath) ?? filePath),
@@ -752,7 +761,7 @@ namespace ProgramVerificationSystems.PlogConverter
                 string url = ErrorCodeUrlHelper.GetVivaUrlCode(error.ErrorInfo.ErrorCode, false);
 
                 writer.WriteLine("<tr>");
-                var projects = error.Project.Split(DataTableUtils.ProjectNameSeparator);
+                var projects = error.ErrorInfo.ProjectNames.ToArray();
                 string projectsStr = (projects.Length > MaxProjectNames)
                     ? string.Join(", ", projects.Take(MaxProjectNames).ToArray().Concat(new string[] { "..." }))
                     : string.Join(", ", projects.Take(MaxProjectNames).ToArray());
@@ -1165,9 +1174,7 @@ namespace ProgramVerificationSystems.PlogConverter
             private static string SaveErrorsToTempJsonFile(IEnumerable<ErrorInfoAdapter> errors)
             {
                 string jsonLog = Path.GetTempFileName() + ".json";
-                JsonPvsReport jsonReport = new JsonPvsReport();
-                jsonReport.AddRange(errors.Select(item => item.ErrorInfo));
-                File.WriteAllText(jsonLog, JsonConvert.SerializeObject(jsonReport, Newtonsoft.Json.Formatting.Indented), Encoding.UTF8);
+                SaveErrorsToJsonFile(errors, jsonLog);
                 return jsonLog;
             }
 
@@ -1476,6 +1483,58 @@ namespace ProgramVerificationSystems.PlogConverter
 
                 return (arguments, fileName);
             }
+        }
+
+        #endregion
+
+        #region Implementation for JSON output
+
+        private sealed class PlogJsonRenderer : IPlogRenderer
+        {
+            private const string MergedReportName = "MergedReport";
+            public RenderInfo RenderInfo { get; private set; }
+            public IEnumerable<ErrorInfoAdapter> Errors { get; private set; }
+            public IEnumerable<ErrorCodeMapping> ErrorCodeMappings { get; private set; }
+            private string OutputNameTemplate { get; set; }
+            public ILogger Logger { get; private set; }
+
+            public string LogExtension { get; }
+            public PlogJsonRenderer(RenderInfo renderInfo,
+                       IEnumerable<ErrorInfoAdapter> errors,
+                       IEnumerable<ErrorCodeMapping> errorCodeMappings,
+                       string outputNameTemplate,
+                       LogRenderType renderType,
+                       ILogger logger = null)
+            {
+                RenderInfo = renderInfo;
+                Errors = errors;
+                ErrorCodeMappings = errorCodeMappings;
+                OutputNameTemplate = outputNameTemplate;
+                Logger = logger;
+                LogExtension = ReflectionUtils.GetAttributes<DescriptionAttribute, LogRenderType>(renderType.ToString(),
+                                                                                                  BindingFlags.Static | BindingFlags.Public)
+                                              .First().Description;
+            }
+
+            public void Render(Stream writer = null)
+            {
+                var destDir = RenderInfo.OutputDir;
+                var jsonLogName = !string.IsNullOrWhiteSpace(OutputNameTemplate) ? OutputNameTemplate
+                                                                                 : (RenderInfo.Logs.Count == 1 ? RenderInfo.Logs.First() 
+                                                                                                               : MergedReportName);
+
+                var jsonLogPath = Path.Combine(destDir, string.Format("{0}{1}", Path.GetFileName(jsonLogName), LogExtension));
+
+                SaveErrorsToJsonFile(Errors, jsonLogPath);
+                OnRenderComplete(new RenderCompleteEventArgs(jsonLogPath));
+            }
+
+            public event EventHandler<RenderCompleteEventArgs> RenderComplete;
+            private void OnRenderComplete(RenderCompleteEventArgs renderComplete)
+            {
+                RenderComplete?.Invoke(this, renderComplete);
+            }
+
         }
 
         #endregion

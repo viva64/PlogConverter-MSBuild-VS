@@ -16,6 +16,7 @@ using System.Data;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using System.Threading;
+using Newtonsoft.Json;
 
 namespace ProgramVerificationSystems.PlogConverter
 {
@@ -27,10 +28,12 @@ namespace ProgramVerificationSystems.PlogConverter
         public const string SourceTreeRootMarker = ApplicationSettings.SourceTreeRootMarker;
         private static readonly Encoding DefaultEncoding = Encoding.UTF8;
         public readonly static string PlogExtension;
+        public readonly static string JsonLogExtension;
 
         static Utils()
         {
             PlogExtension = ReflectionUtils.GetAttributes<DescriptionAttribute, LogRenderType>(LogRenderType.Plog).First().Description;
+            JsonLogExtension = ReflectionUtils.GetAttributes<DescriptionAttribute, LogRenderType>(LogRenderType.JSON).First().Description;
         }
 
         public static string GetDescription<T>(T genObject)
@@ -51,12 +54,18 @@ namespace ProgramVerificationSystems.PlogConverter
 
         public static IEnumerable<ErrorInfoAdapter> GetErrors(string plogFilename, out string solutionName)
         {
-            bool isXMLLog = Path.GetExtension(plogFilename).Equals(PlogExtension, StringComparison.OrdinalIgnoreCase);
+            string logExtention = Path.GetExtension(plogFilename);
 
-            if (isXMLLog)
+            if (logExtention.Equals(PlogExtension, StringComparison.OrdinalIgnoreCase))
             {
                 var xmlText = File.ReadAllText(plogFilename, DefaultEncoding);
                 return GetErrorsFromXml(out solutionName, xmlText);
+            }
+            else if (logExtention.Equals(JsonLogExtension, StringComparison.OrdinalIgnoreCase))
+            {
+                solutionName = String.Empty;
+                var jsonText = File.ReadAllText(plogFilename, DefaultEncoding);
+                return GetErrorsFromJson(jsonText);
             }
             else
             {
@@ -195,6 +204,17 @@ namespace ProgramVerificationSystems.PlogConverter
             return messagesElements.Cast<object>().Select((o, elIndex) => GetErrorInfo(messagesElements, elIndex)).ToList();
         }
 
+        private static IEnumerable<ErrorInfoAdapter> GetErrorsFromJson(string jsonText)
+        {
+            JsonPvsReport jsonPvsReport = JsonConvert.DeserializeObject<JsonPvsReport>(jsonText);
+            List<ErrorInfoAdapter> errorInfoAdapters = new List<ErrorInfoAdapter>();
+
+            foreach(JsonPvsReport.Warning warning in jsonPvsReport.Warnings)
+                errorInfoAdapters.Add(new ErrorInfoAdapter(JsonPvsReport.Warning.WarningToErrorInfo(warning)));
+
+            return errorInfoAdapters;
+        }
+
         public static IEnumerable<ErrorInfoAdapter> FilterErrors(IEnumerable<ErrorInfoAdapter> errors, 
                                         IDictionary<AnalyzerType, ISet<uint>> levelMap,
                                         IEnumerable<string> disabledErrorCodes)
@@ -286,11 +306,7 @@ namespace ProgramVerificationSystems.PlogConverter
                     errorInfo.DefaultOrder = Convert.ToInt32(firstChildContent);
                     break;
                 case DataColumnNames.ErrorListProject:
-                    errorInfo.Project = firstChildContent;
                     errorInfo.ErrorInfo.ProjectNames = firstChildContent.Split(DataTableUtils.ProjectNameSeparator).ToList();
-                    break;
-                case DataColumnNames.ErrorListShortFile:
-                    errorInfo.ShortFile = firstChildContent;
                     break;
                 case DataColumnNames.ErrorListAnalyzedSourceFiles:
                     errorInfo.ErrorInfo.AnalyzedSourceFiles = firstChildContent.Split(DataTableUtils.AnalyzedSourceFileSeparator).ToList();
