@@ -261,7 +261,7 @@ namespace ProgramVerificationSystems.PlogConverter
                             {
                                 error.ErrorInfo.Message,
                                 String.Join("%", error.ErrorInfo.ProjectNames.ToArray()),
-                                Path.GetFileName(error.ErrorInfo.FileName),
+                                Path.GetFileName(error.ErrorInfo.FileName.Replace(ApplicationSettings.SourceTreeRootMarker, String.Empty)),
                                 error.ErrorInfo.LineNumber.ToString(),
                                 error.ErrorInfo.FalseAlarmMark.ToString(),
                                 isSrcRootEmpty ? filePath: (PathUtils.NormalizePath(filePath) ?? filePath),
