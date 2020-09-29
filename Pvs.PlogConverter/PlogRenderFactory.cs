@@ -1474,7 +1474,7 @@ namespace ProgramVerificationSystems.PlogConverter
  
             protected override (string, string) GetGenerateData(string jsonLog)
             {
-                var logName = !string.IsNullOrWhiteSpace(OutputNameTemplate) ? OutputNameTemplate : (RenderInfo.Logs.Any() ? Path.GetFileName(RenderInfo.Logs.First()) : "out");
+                var logName = !string.IsNullOrWhiteSpace(OutputNameTemplate) ? OutputNameTemplate : (RenderInfo.Logs.Count == 1 ? Path.GetFileName(RenderInfo.Logs.First()) : "MergedReport");
                 var fileName = Path.Combine(RenderInfo.OutputDir, $"{logName}{LogExtension}").TrimEnd(new char[] { '\\', '/' });
                 var sourceRoot = RenderInfo.SrcRoot.TrimEnd(new char[] { '\\', '/' });
                 string arguments = $" \"{jsonLog}\" -t sarif -o \"{fileName}\" -r \"{sourceRoot}\" -a \"GA;64;OP;CS;MISRA\"";
