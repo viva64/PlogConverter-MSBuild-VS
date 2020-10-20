@@ -17,6 +17,7 @@
     </UpgradeBackupLocation>
     <OldToolsVersion>2.0</OldToolsVersion>
     <TargetFrameworkProfile />
+    <PVSDev Condition="Exists('..\..\PlogConverter.Dev\PlogConverter.Dev.props') And '$(SolutionName)' != 'PlogConverter'">true</PVSDev>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -41,11 +42,13 @@
     <StartupObject>
     </StartupObject>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="PVS-Studio_Cmd, Culture=neutral, PublicKeyToken=0bdd5054f5d6a4a5, processorArchitecture=MSIL">
+  <ItemGroup Condition="'$(PVSDev)' != 'true'">
+   <Reference Include="PVS-Studio_Cmd, Culture=neutral, PublicKeyToken=0bdd5054f5d6a4a5, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(TargetDir)PVS-Studio_Cmd.exe</HintPath>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
@@ -82,6 +85,7 @@
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\..\PlogConverter.Dev\PlogConverter.Dev.props" Condition="'$(PVSDev)' == 'true'" />
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
@@ -93,7 +97,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  <Target Name="BeforeBuild">
+  <Target Name="BeforeBuild" Condition="'$(PVSDev)' != 'true'">
     <PropertyGroup>
       <PVSInstallDir Condition="$(PVSInstallDir) == ''">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\ProgramVerificationSystems\PVS-Studio@InstallDir)</PVSInstallDir>
       <PVSInstallDir Condition="$(PVSInstallDir) == ''">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\ProgramVerificationSystems\PVS-Studio@InstallDir)</PVSInstallDir>
