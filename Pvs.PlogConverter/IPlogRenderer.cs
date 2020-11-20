@@ -11,7 +11,7 @@ namespace ProgramVerificationSystems.PlogConverter
     public enum ErrorCodeMapping
     {
         CWE,
-        MISRA
+        SAST
     }
 
     /// <summary>

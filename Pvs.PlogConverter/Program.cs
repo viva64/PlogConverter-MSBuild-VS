@@ -190,11 +190,13 @@ namespace ProgramVerificationSystems.PlogConverter
                 return false;
             }
 
-            if (errorCodeMappings.Contains(ErrorCodeMapping.MISRA) &&
+            if (errorCodeMappings.Contains(ErrorCodeMapping.SAST) &&
                 parsedArgs.LevelMap.Any() && 
-                !parsedArgs.LevelMap.Any(item => item.Key == AnalyzerType.MISRA))
+                !parsedArgs.LevelMap.Any(item =>   item.Key == AnalyzerType.MISRA
+                                                || item.Key == AnalyzerType.AUTOSAR
+                                                || item.Key == AnalyzerType.OWASP))
             {
-                warningMessages.Add(string.Format("MISRA mapping is specified, but MISRA rules group is not enabled. Check the '-{0}' flag.", CmdConverterOptions.AnalyzerLevelFilter_ShortName));
+                warningMessages.Add(string.Format("SAST mapping is specified, but SAST rules group is not enabled. Check the '-{0}' flag.", CmdConverterOptions.AnalyzerLevelFilter_ShortName));
             }
 
             // Check if provided outputNameTemplate is a valid file name

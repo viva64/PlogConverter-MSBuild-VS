@@ -219,8 +219,8 @@ namespace ProgramVerificationSystems.PlogConverter
                         {
                             if (security == ErrorCodeMapping.CWE)
                                 headerRow.Add("CWE");
-                            if (security == ErrorCodeMapping.MISRA)
-                                headerRow.Add("MISRA");
+                            if (security == ErrorCodeMapping.SAST)
+                                headerRow.Add("SAST");
                         }
 
                         headerRow.AddRange(new List<string>
@@ -253,8 +253,8 @@ namespace ProgramVerificationSystems.PlogConverter
                             {
                                 if (security == ErrorCodeMapping.CWE)
                                     messageRow.Add(error.ErrorInfo.ToCWEString());
-                                if (security == ErrorCodeMapping.MISRA)
-                                    messageRow.Add(error.ErrorInfo.ToMISRAString());
+                                if (security == ErrorCodeMapping.SAST)
+                                    messageRow.Add(error.ErrorInfo.SastId);
                             }
 
                             messageRow.AddRange(new List<string>
@@ -395,12 +395,12 @@ namespace ProgramVerificationSystems.PlogConverter
                         if (security == ErrorCodeMapping.CWE && error.ErrorInfo.CweId != default(uint))
                             securityCodes += $"[{error.ErrorInfo.ToCWEString()}]";
 
-                        if (security == ErrorCodeMapping.MISRA && !string.IsNullOrEmpty(error.ErrorInfo.MisraId))
+                        if (security == ErrorCodeMapping.SAST && !string.IsNullOrEmpty(error.ErrorInfo.SastId))
                         {
                             if (!string.IsNullOrEmpty(securityCodes))
                                 securityCodes += ' ';
 
-                            securityCodes += $"[{error.ErrorInfo.ToMISRAString()}]";
+                            securityCodes += $"[{error.ErrorInfo.SastId}]";
                         }
                     }
 
@@ -504,9 +504,9 @@ namespace ProgramVerificationSystems.PlogConverter
                             securityMessage = error.ErrorInfo.ToCWEString();
                             break;
                         }
-                        else if (security == ErrorCodeMapping.MISRA)
+                        else if (security == ErrorCodeMapping.SAST)
                         {
-                            securityMessage = error.ErrorInfo.ToMISRAString();
+                            securityMessage = error.ErrorInfo.SastId;
                             break;
                         }
                     }
@@ -576,7 +576,7 @@ namespace ProgramVerificationSystems.PlogConverter
             private const int MaxProjectNames = 5;
             private const int MaxAnalyzedSourceFiles = 5;
             private const int DefaultCWEColumnWidth = 6; //%
-            private const int DefaultMISRAColumnWidth = 9; //%
+            private const int DefaultSASTColumnWidth = 9; //%
             private const int DefaultMessageColumntWidth = 45; //%
 
             private readonly string _htmlFoot;
@@ -632,8 +632,8 @@ namespace ProgramVerificationSystems.PlogConverter
                 {
                     if (security == ErrorCodeMapping.CWE)
                         sb.AppendLine($"<th style=\"width: {GetCWEColumntWidth()}%;\">CWE</th>");
-                    if (security == ErrorCodeMapping.MISRA)
-                        sb.AppendLine($"<th style=\"width: {GetMISRAColumntWidth()}%;\">MISRA</th>");
+                    if (security == ErrorCodeMapping.SAST)
+                        sb.AppendLine($"<th style=\"width: {GetSASTColumntWidth()}%;\">SAST</th>");
                 }
                 sb.AppendLine($"<th style=\"width: {GetMessageColumnWidth()}%;\">Message</th>");
                 sb.AppendLine("<th style=\"width: 20%;\">Analyzed Source File(s)</th>");
@@ -662,8 +662,8 @@ namespace ProgramVerificationSystems.PlogConverter
                     if (security == ErrorCodeMapping.CWE)
                         width -= GetCWEColumntWidth();
 
-                    if (security == ErrorCodeMapping.MISRA)
-                        width -= GetMISRAColumntWidth();
+                    if (security == ErrorCodeMapping.SAST)
+                        width -= GetSASTColumntWidth();
                 }
 
                 return width;
@@ -674,9 +674,9 @@ namespace ProgramVerificationSystems.PlogConverter
                 return DefaultCWEColumnWidth;
             }
 
-            private int GetMISRAColumntWidth()
+            private int GetSASTColumntWidth()
             {
-                return DefaultMISRAColumnWidth;
+                return DefaultSASTColumnWidth;
             }
 
             public void Render(Stream writer = null)
@@ -789,11 +789,11 @@ namespace ProgramVerificationSystems.PlogConverter
                             ErrorCodeUrlHelper.GetCWEUrl(error.ErrorInfo),
                             error.ErrorInfo.ToCWEString());
 
-                    if (security == ErrorCodeMapping.MISRA)
+                    if (security == ErrorCodeMapping.SAST)
                         writer.WriteLine("<td style='width: {0}%;'><a href='{1}'>{2}</a></td>",
-                            GetMISRAColumntWidth(),
+                            GetSASTColumntWidth(),
                             ErrorCodeUrlHelper.GetVivaUrlCode(error.ErrorInfo.ErrorCode, false),
-                            error.ErrorInfo.ToMISRAString());
+                            error.ErrorInfo.SastId);
                 }
 
                 writer.WriteLine("<td style='width: {0}%;'>{1}</td>", GetMessageColumnWidth(), message);
@@ -866,7 +866,9 @@ namespace ProgramVerificationSystems.PlogConverter
                 "64-bit issues L1:{8} + L2:{9} + L3:{10} = {11}" + Environment.NewLine +
                 "Customer Specific L1:{12} + L2:{13} + L3:{14} = {15}" + Environment.NewLine +
                 "MISRA L1:{16} + L2:{17} + L3:{18} = {19}" + Environment.NewLine +
-                "Total L1:{20} + L2:{21} + L3:{22} = {23}";
+                "AUTOSAR L1:{20} + L2:{21} + L3:{22} = {23}" + Environment.NewLine +
+                "OWASP L1:{24} + L2:{25} + L3:{26} = {27}" + Environment.NewLine +
+                "Total L1:{28} + L2:{29} + L3:{30} = {31}";
 
             public string LogExtension { get; }
             public RenderInfo RenderInfo { get; private set; }
@@ -944,7 +946,9 @@ namespace ProgramVerificationSystems.PlogConverter
                     {AnalyzerType.VivaMP, new[] {0, 0, 0}},
                     {AnalyzerType.Viva64, new[] {0, 0, 0}},
                     {AnalyzerType.CustomerSpecific, new[] {0, 0, 0}},
-                    {AnalyzerType.MISRA, new[] {0, 0, 0}}
+                    {AnalyzerType.MISRA, new[] {0, 0, 0}},
+                    {AnalyzerType.AUTOSAR, new[] {0, 0, 0}},
+                    {AnalyzerType.OWASP, new[] {0, 0, 0}},
                 };
 
                 foreach (
@@ -977,6 +981,14 @@ namespace ProgramVerificationSystems.PlogConverter
                 for (var i = 0; i < totalStat[AnalyzerType.MISRA].Length; i++)
                     misraTotal += totalStat[AnalyzerType.MISRA][i];
 
+                var autosarTotal = 0;
+                for (var i = 0; i < totalStat[AnalyzerType.AUTOSAR].Length; i++)
+                    autosarTotal += totalStat[AnalyzerType.AUTOSAR][i];
+
+                var owaspTotal = 0;
+                for (var i = 0; i < totalStat[AnalyzerType.OWASP].Length; i++)
+                    owaspTotal += totalStat[AnalyzerType.OWASP][i];
+
                 int l1Total = 0, l2Total = 0, l3Total = 0;
                 //VivaMP is no longer supported by PVS-Studio, leaving for compatibility
                 //Not counting Unknown errors (fails) in total statistics
@@ -992,11 +1004,13 @@ namespace ProgramVerificationSystems.PlogConverter
                 var total = l1Total + l2Total + l3Total;
                 return
                     string.Format(_commandLineTotals,
-                        totalStat[AnalyzerType.General][0], totalStat[AnalyzerType.General][1], totalStat[AnalyzerType.General][2], gaTotal,
-                        totalStat[AnalyzerType.Optimization][0], totalStat[AnalyzerType.Optimization][1], totalStat[AnalyzerType.Optimization][2], opTotal,
-                        totalStat[AnalyzerType.Viva64][0], totalStat[AnalyzerType.Viva64][1], totalStat[AnalyzerType.Viva64][2], total64,
+                        totalStat[AnalyzerType.General][0],          totalStat[AnalyzerType.General][1],          totalStat[AnalyzerType.General][2],          gaTotal,
+                        totalStat[AnalyzerType.Optimization][0],     totalStat[AnalyzerType.Optimization][1],     totalStat[AnalyzerType.Optimization][2],     opTotal,
+                        totalStat[AnalyzerType.Viva64][0],           totalStat[AnalyzerType.Viva64][1],           totalStat[AnalyzerType.Viva64][2],           total64,
                         totalStat[AnalyzerType.CustomerSpecific][0], totalStat[AnalyzerType.CustomerSpecific][1], totalStat[AnalyzerType.CustomerSpecific][2], csTotal,
-                        totalStat[AnalyzerType.MISRA][0], totalStat[AnalyzerType.MISRA][1], totalStat[AnalyzerType.MISRA][2], misraTotal,
+                        totalStat[AnalyzerType.MISRA][0],            totalStat[AnalyzerType.MISRA][1],            totalStat[AnalyzerType.MISRA][2],            misraTotal,
+                        totalStat[AnalyzerType.AUTOSAR][0],          totalStat[AnalyzerType.AUTOSAR][1],          totalStat[AnalyzerType.AUTOSAR][2],          autosarTotal,
+                        totalStat[AnalyzerType.OWASP][0],            totalStat[AnalyzerType.OWASP][1],            totalStat[AnalyzerType.OWASP][2],            owaspTotal,
                         l1Total, l2Total, l3Total, total) + Environment.NewLine;
             }
         }
@@ -1117,12 +1131,12 @@ namespace ProgramVerificationSystems.PlogConverter
                     if (security == ErrorCodeMapping.CWE && error.ErrorInfo.CweId != default(uint))
                         securityCodes += $"[{error.ErrorInfo.ToCWEString()}]";
 
-                    if (security == ErrorCodeMapping.MISRA && !string.IsNullOrEmpty(error.ErrorInfo.MisraId))
+                    if (security == ErrorCodeMapping.SAST && !string.IsNullOrEmpty(error.ErrorInfo.SastId))
                     {
                         if (!string.IsNullOrEmpty(securityCodes))
                             securityCodes += ' ';
 
-                        securityCodes += $"[{error.ErrorInfo.ToMISRAString()}]";
+                        securityCodes += $"[{error.ErrorInfo.SastId}]";
                     }
                 }
 
@@ -1282,7 +1296,7 @@ namespace ProgramVerificationSystems.PlogConverter
                 if (Directory.Exists(defaultFullHtmlDir))
                     Directory.Delete(defaultFullHtmlDir, true);
 
-                string arguments = $" \"{jsonLog}\" -t fullhtml -o \"{Path.Combine(RenderInfo.OutputDir, OutputNameTemplate).TrimEnd(new char[] { '\\', '/' })}\" -r \"{RenderInfo.SrcRoot.TrimEnd(new char[] { '\\', '/' })}\" -a \"GA;64;OP;CS;MISRA\"";
+                string arguments = $" \"{jsonLog}\" -t fullhtml -o \"{Path.Combine(RenderInfo.OutputDir, OutputNameTemplate).TrimEnd(new char[] { '\\', '/' })}\" -r \"{RenderInfo.SrcRoot.TrimEnd(new char[] { '\\', '/' })}\" -a \"GA;64;OP;CS;MISRA;AUTOSAR;OWASP\"";
                 foreach (var security in ErrorCodeMappings)
                     arguments += " -m " + security.ToString().ToLower();
 
@@ -1477,7 +1491,7 @@ namespace ProgramVerificationSystems.PlogConverter
                 var logName = !string.IsNullOrWhiteSpace(OutputNameTemplate) ? OutputNameTemplate : (RenderInfo.Logs.Count == 1 ? Path.GetFileName(RenderInfo.Logs.First()) : "MergedReport");
                 var fileName = Path.Combine(RenderInfo.OutputDir, $"{logName}{LogExtension}").TrimEnd(new char[] { '\\', '/' });
                 var sourceRoot = RenderInfo.SrcRoot.TrimEnd(new char[] { '\\', '/' });
-                string arguments = $" \"{jsonLog}\" -t sarif -o \"{fileName}\" -r \"{sourceRoot}\" -a \"GA;64;OP;CS;MISRA\"";
+                string arguments = $" \"{jsonLog}\" -t sarif -o \"{fileName}\" -r \"{sourceRoot}\" -a \"GA;64;OP;CS;MISRA;AUTOSAR;OWASP\"";
                 foreach (var security in ErrorCodeMappings)
                     arguments += " -m " + security.ToString().ToLower();
 
