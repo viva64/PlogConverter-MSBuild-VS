@@ -295,6 +295,7 @@ namespace ProgramVerificationSystems.PlogConverter
                                                   Convert.ToUInt32(firstChildContent.Substring(ErrorInfo.CWEPrefix.Length))
                                                 : default(uint);
                     break;
+                case DataColumnNames.ErrorListMisra: // For compatibility with xml version 6 and below
                 case DataColumnNames.ErrorListSast:
                     errorInfo.ErrorInfo.SastId = firstChildContent;
                     break;
@@ -463,6 +464,20 @@ namespace ProgramVerificationSystems.PlogConverter
             var containsABadCharacter = new Regex("["
                   + Regex.Escape(new string(Path.GetInvalidPathChars())) + "]");
             return !containsABadCharacter.IsMatch(testName);
+        }
+
+        public static void DetectCodeMappings(IEnumerable<ErrorCodeMapping> errorCodeMappings, out bool hasCWE, out bool hasSAST)
+        {
+            hasCWE = false;
+            hasSAST = false;
+
+            foreach (var security in errorCodeMappings)
+            {
+                if (security == ErrorCodeMapping.CWE)
+                    hasCWE = true;
+                if (security == ErrorCodeMapping.MISRA || security == ErrorCodeMapping.OWASP || security == ErrorCodeMapping.AUTOSAR)
+                    hasSAST = true;
+            }
         }
     }
 

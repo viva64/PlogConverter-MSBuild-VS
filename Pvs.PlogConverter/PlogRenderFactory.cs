@@ -215,13 +215,12 @@ namespace ProgramVerificationSystems.PlogConverter
                             "Error code"
                         };
 
-                        foreach (var security in ErrorCodeMappings)
-                        {
-                            if (security == ErrorCodeMapping.CWE)
-                                headerRow.Add("CWE");
-                            if (security == ErrorCodeMapping.SAST)
-                                headerRow.Add("SAST");
-                        }
+                        Utils.DetectCodeMappings(ErrorCodeMappings, out bool hasCWE, out bool hasSAST);
+
+                        if (hasCWE)
+                            headerRow.Add("CWE");
+                        if (hasSAST)
+                            headerRow.Add("SAST");
 
                         headerRow.AddRange(new List<string>
                         {
@@ -249,13 +248,10 @@ namespace ProgramVerificationSystems.PlogConverter
                                 error.ErrorInfo.ErrorCode
                             };
 
-                            foreach (var security in ErrorCodeMappings)
-                            {
-                                if (security == ErrorCodeMapping.CWE)
-                                    messageRow.Add(error.ErrorInfo.ToCWEString());
-                                if (security == ErrorCodeMapping.SAST)
-                                    messageRow.Add(error.ErrorInfo.SastId);
-                            }
+                            if (hasCWE)
+                                messageRow.Add(error.ErrorInfo.ToCWEString());
+                            if (hasSAST)
+                                messageRow.Add(error.ErrorInfo.SastId);
 
                             messageRow.AddRange(new List<string>
                             {
@@ -389,19 +385,18 @@ namespace ProgramVerificationSystems.PlogConverter
                             break;
                     }
 
+                    Utils.DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
                     string securityCodes = string.Empty;
-                    foreach (var security in ErrorCodeMappings)
+
+                    if (hasCWE && error.ErrorInfo.CweId != default(uint))
+                        securityCodes += $"[{error.ErrorInfo.ToCWEString()}]";
+                    
+                    if (hasSAST && !string.IsNullOrEmpty(error.ErrorInfo.SastId))
                     {
-                        if (security == ErrorCodeMapping.CWE && error.ErrorInfo.CweId != default(uint))
-                            securityCodes += $"[{error.ErrorInfo.ToCWEString()}]";
+                        if (!string.IsNullOrEmpty(securityCodes))
+                            securityCodes += ' ';
 
-                        if (security == ErrorCodeMapping.SAST && !string.IsNullOrEmpty(error.ErrorInfo.SastId))
-                        {
-                            if (!string.IsNullOrEmpty(securityCodes))
-                                securityCodes += ' ';
-
-                            securityCodes += $"[{error.ErrorInfo.SastId}]";
-                        }
+                        securityCodes += $"[{error.ErrorInfo.SastId}]";
                     }
 
                     if (!string.IsNullOrEmpty(securityCodes))
@@ -496,27 +491,27 @@ namespace ProgramVerificationSystems.PlogConverter
 
                 foreach (var error in Errors)
                 {
-                    String securityMessage = String.Empty;
-                    foreach (var security in ErrorCodeMappings)
-                    {
-                        if (security == ErrorCodeMapping.CWE)
-                        {
-                            securityMessage = error.ErrorInfo.ToCWEString();
-                            break;
-                        }
-                        else if (security == ErrorCodeMapping.SAST)
-                        {
-                            securityMessage = error.ErrorInfo.SastId;
-                            break;
-                        }
-                    }
-
                     if (!inspectionsIDs.Contains(error.ErrorInfo.ErrorCode))
                     {
                         inspectionsIDs.Add(error.ErrorInfo.ErrorCode);
 
                         String errorURL = ErrorCodeUrlHelper.GetVivaUrlCode(error.ErrorInfo.ErrorCode, false);
                         writer.WriteLine($"##teamcity[inspectionType id='{error.ErrorInfo.ErrorCode}' name='{error.ErrorInfo.ErrorCode}' description='{errorURL}' category='{(ErrorCategory)error.ErrorInfo.Level}']");
+                    }
+
+                    String securityMessage = String.Empty;
+                    Utils.DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
+                    var cwe = error.ErrorInfo.ToCWEString();
+                    if (hasCWE && !String.IsNullOrEmpty(cwe))
+                        securityMessage = cwe;
+
+                    var sast = error.ErrorInfo.SastId;
+                    if (hasSAST && !String.IsNullOrEmpty(sast))
+                    {
+                        if (String.IsNullOrEmpty(securityMessage))
+                            securityMessage = sast;
+                        else
+                            securityMessage += $", {sast}";
                     }
 
                     String message = EscapeMessage(String.Format("{0}{1}",
@@ -627,14 +622,13 @@ namespace ProgramVerificationSystems.PlogConverter
                 sb.AppendLine("<th style=\"width: 10%;\">Project</th>");
                 sb.AppendLine("<th style=\"width: 20%;\">File</th>");
                 sb.AppendLine("<th style=\"width: 5%;\">Code</th>");
-                
-                foreach (var security in ErrorCodeMappings)
-                {
-                    if (security == ErrorCodeMapping.CWE)
-                        sb.AppendLine($"<th style=\"width: {GetCWEColumntWidth()}%;\">CWE</th>");
-                    if (security == ErrorCodeMapping.SAST)
-                        sb.AppendLine($"<th style=\"width: {GetSASTColumntWidth()}%;\">SAST</th>");
-                }
+
+                Utils.DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
+                if (hasCWE)
+                    sb.AppendLine($"<th style=\"width: {GetCWEColumntWidth()}%;\">CWE</th>");
+                if (hasSAST)
+                    sb.AppendLine($"<th style=\"width: {GetSASTColumntWidth()}%;\">SAST</th>");
+
                 sb.AppendLine($"<th style=\"width: {GetMessageColumnWidth()}%;\">Message</th>");
                 sb.AppendLine("<th style=\"width: 20%;\">Analyzed Source File(s)</th>");
                 sb.AppendLine("</tr>");
@@ -656,15 +650,11 @@ namespace ProgramVerificationSystems.PlogConverter
             private int GetMessageColumnWidth()
             {
                 int width = DefaultMessageColumntWidth;
-
-                foreach (var security in ErrorCodeMappings)
-                {
-                    if (security == ErrorCodeMapping.CWE)
-                        width -= GetCWEColumntWidth();
-
-                    if (security == ErrorCodeMapping.SAST)
-                        width -= GetSASTColumntWidth();
-                }
+                Utils.DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
+                if (hasCWE)
+                    width -= GetCWEColumntWidth();
+                if (hasSAST)
+                    width -= GetSASTColumntWidth();
 
                 return width;
             }
@@ -781,20 +771,14 @@ namespace ProgramVerificationSystems.PlogConverter
                 writer.WriteLine("</td>");
                 writer.WriteLine("<td style='width: 5%;'><a href='{0}'>{1}</a></td>", url, errorCode);
 
-                foreach (var security in ErrorCodeMappings)
-                {
-                    if (security == ErrorCodeMapping.CWE)
-                        writer.WriteLine("<td style='width: {0}%;'><a href='{1}'>{2}</a></td>",
-                            GetCWEColumntWidth(),
-                            ErrorCodeUrlHelper.GetCWEUrl(error.ErrorInfo),
-                            error.ErrorInfo.ToCWEString());
-
-                    if (security == ErrorCodeMapping.SAST)
-                        writer.WriteLine("<td style='width: {0}%;'><a href='{1}'>{2}</a></td>",
-                            GetSASTColumntWidth(),
-                            ErrorCodeUrlHelper.GetVivaUrlCode(error.ErrorInfo.ErrorCode, false),
-                            error.ErrorInfo.SastId);
-                }
+                Utils.DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
+                if (hasCWE)
+                    writer.WriteLine("<td style='width: {0}%;'><a href='{1}'>{2}</a></td>",
+                                     GetCWEColumntWidth(),
+                                     ErrorCodeUrlHelper.GetCWEUrl(error.ErrorInfo),
+                                     error.ErrorInfo.ToCWEString());
+                if (hasSAST)
+                    writer.WriteLine("<td style='width: {0}%;'>{1}</td>", GetSASTColumntWidth(), error.ErrorInfo.SastId);
 
                 writer.WriteLine("<td style='width: {0}%;'>{1}</td>", GetMessageColumnWidth(), message);
 
@@ -1125,19 +1109,17 @@ namespace ProgramVerificationSystems.PlogConverter
                 var isSrcRootEmpty = String.IsNullOrWhiteSpace(RenderInfo.SrcRoot);
                 fileName = fileName.Replace(Utils.SourceTreeRootMarker, isSrcRootEmpty ? string.Empty : RenderInfo.SrcRoot.Trim('"').TrimEnd('\\'));
 
-                string securityCodes = string.Empty;
-                foreach (var security in ErrorCodeMappings)
+                Utils.DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
+                string securityCodes = string.Empty;          
+                if (hasCWE && error.ErrorInfo.CweId != default(uint))
+                    securityCodes += $"[{error.ErrorInfo.ToCWEString()}]";
+
+                if (hasSAST && !string.IsNullOrEmpty(error.ErrorInfo.SastId))
                 {
-                    if (security == ErrorCodeMapping.CWE && error.ErrorInfo.CweId != default(uint))
-                        securityCodes += $"[{error.ErrorInfo.ToCWEString()}]";
+                    if (!string.IsNullOrEmpty(securityCodes))
+                        securityCodes += ' ';
 
-                    if (security == ErrorCodeMapping.SAST && !string.IsNullOrEmpty(error.ErrorInfo.SastId))
-                    {
-                        if (!string.IsNullOrEmpty(securityCodes))
-                            securityCodes += ' ';
-
-                        securityCodes += $"[{error.ErrorInfo.SastId}]";
-                    }
+                    securityCodes += $"[{error.ErrorInfo.SastId}]";
                 }
 
                 if (!string.IsNullOrEmpty(securityCodes))

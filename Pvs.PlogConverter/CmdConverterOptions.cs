@@ -99,7 +99,7 @@ namespace ProgramVerificationSystems.PlogConverter
         /// </summary>
         /// <example>--errorCodeMapping=CWE</example>
         [OptionList('m', "errorCodeMapping", Separator = ',', Required = false,
-            HelpText = "Enable mapping of PVS-Studio error codes to other rule sets. Possible values: CWE,SAST")]
+            HelpText = "Enable mapping of PVS-Studio error codes to other rule sets. Possible values: CWE,MISRA,OWASP,AUTOSAR")]
         public IList<String> ErrorCodeMapping { get; set; }
 
         /// <summary>
