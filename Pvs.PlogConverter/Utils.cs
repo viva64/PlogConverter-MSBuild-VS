@@ -25,6 +25,7 @@ namespace ProgramVerificationSystems.PlogConverter
     /// </summary>
     internal static class Utils
     {
+        public const string SourceTreeRootMarker = ApplicationSettings.SourceTreeRootMarker;
         private static readonly Encoding DefaultEncoding = Encoding.UTF8;
         public readonly static string PlogExtension;
         public readonly static string JsonLogExtension;
