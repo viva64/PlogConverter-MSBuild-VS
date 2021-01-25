@@ -159,6 +159,14 @@ namespace ProgramVerificationSystems.PlogConverter
 
             parsedArgs.RenderInfo.SrcRoot = converterOptions.SrcRoot;
 
+            if (string.IsNullOrWhiteSpace(converterOptions.SrcRoot) && converterOptions.TransformationMode == TransformationMode.toAbsolute)
+            {
+                errorMessage = "You should setup --srcRoot option";
+                return false;
+            }
+
+            parsedArgs.RenderInfo.TransformationMode = converterOptions.TransformationMode;
+
             // Getting a map for levels by the analyzer type
             IDictionary<AnalyzerType, ISet<uint>> analyzerLevelFilterMap = new Dictionary<AnalyzerType, ISet<uint>>();
             if (converterOptions.AnalyzerLevelFilter != null && converterOptions.AnalyzerLevelFilter.Count > 0 &&

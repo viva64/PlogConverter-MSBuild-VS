@@ -53,6 +53,10 @@ namespace ProgramVerificationSystems.PlogConverter
             + "Transforms relative paths from input logs (starting with |?| marker) to absolute paths in output logs.")]
         public string SrcRoot { get; set; }
 
+        [Option('R', "pathTransformationMode", Required = false, DefaultValue = TransformationMode.toAbsolute, HelpText = "Trasformation mode: toAbsolute - transfort to absolute path, " +
+            "toRelative - transform to relative with source root (--srcRoot option).")]
+        public TransformationMode TransformationMode { get; set; }
+
         public const char AnalyzerLevelFilter_ShortName = 'a';
         public const string AnalyzerLevelFilter_LongName = "analyzer";
 

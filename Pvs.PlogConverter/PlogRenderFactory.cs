@@ -20,6 +20,12 @@ using Newtonsoft.Json;
 
 namespace ProgramVerificationSystems.PlogConverter
 {
+    public enum TransformationMode 
+    {
+        toRelative,
+        toAbsolute
+    }
+
     /// <summary>
     ///     Output provider
     /// </summary>
@@ -237,10 +243,8 @@ namespace ProgramVerificationSystems.PlogConverter
 
                         csvWriter.WriteRow(headerRow);
 
-                        var isSrcRootEmpty = String.IsNullOrWhiteSpace(RenderInfo.SrcRoot);
                         foreach (var error in Errors)
                         {
-                            var filePath = error.ErrorInfo.FileName.Replace(Utils.SourceTreeRootMarker, isSrcRootEmpty ? string.Empty : RenderInfo.SrcRoot.Trim('"').TrimEnd('\\'));
                             var messageRow = new CsvRow()
                             {
                                 error.FavIcon.ToString(),
@@ -264,9 +268,9 @@ namespace ProgramVerificationSystems.PlogConverter
                                 Path.GetFileName(error.ErrorInfo.FileName.Replace(ApplicationSettings.SourceTreeRootMarker, String.Empty)),
                                 error.ErrorInfo.LineNumber.ToString(),
                                 error.ErrorInfo.FalseAlarmMark.ToString(),
-                                isSrcRootEmpty ? filePath: (PathUtils.NormalizePath(filePath) ?? filePath),
+                                PlogRenderUtils.ConvertPath(error.ErrorInfo.FileName, RenderInfo.SrcRoot, RenderInfo.TransformationMode),
                                 error.ErrorInfo.AnalyzerType.ToString(),
-                                string.Join("|", error.ErrorInfo.AnalyzedSourceFiles.Select(x => !string.IsNullOrWhiteSpace(x) ? Path.GetFileName(x.Replace(Utils.SourceTreeRootMarker, RenderInfo.SrcRoot.Trim('"').TrimEnd('\\'))) : x))
+                                string.Join("|", error.ErrorInfo.AnalyzedSourceFiles.Select(x => !string.IsNullOrWhiteSpace(x) ? Path.GetFileName(x.Replace(ApplicationSettings.SourceTreeRootMarker, RenderInfo.SrcRoot.Trim('"').TrimEnd('\\'))) : x))
                             });
 
                             csvWriter.WriteRow(messageRow);
@@ -367,11 +371,8 @@ namespace ProgramVerificationSystems.PlogConverter
 
             private void WriteTaskList(TextWriter tasksWriter)
             {
-                var isSrcRootEmpty = String.IsNullOrWhiteSpace(RenderInfo.SrcRoot);
                 foreach (var error in Errors)
                 {
-                    string fileName = error.ErrorInfo.FileName.Replace(Utils.SourceTreeRootMarker, isSrcRootEmpty ? "." : RenderInfo.SrcRoot.Trim('"').TrimEnd('\\'));
-
                     string level = String.Empty;
                     switch (error.ErrorInfo.Level)
                     {
@@ -408,7 +409,7 @@ namespace ProgramVerificationSystems.PlogConverter
                         securityCodes += ' ';
 
                     string lineMessage = String.Format("{0}\t{1}\t{2}\t{3} {4}{5}",
-                                        isSrcRootEmpty ? fileName : (PathUtils.NormalizePath(fileName) ?? fileName),
+                                        PlogRenderUtils.ConvertPath(error.ErrorInfo.FileName, RenderInfo.SrcRoot, RenderInfo.TransformationMode),
                                         error.ErrorInfo.LineNumber,
                                         level,
                                         error.ErrorInfo.ErrorCode,
@@ -524,15 +525,7 @@ namespace ProgramVerificationSystems.PlogConverter
                                                                                                             : $"{securityMessage} ",
                                                                                                               error.ErrorInfo.Message));
 
-                    bool isSrcRootEmpty = String.IsNullOrWhiteSpace(RenderInfo.SrcRoot);
-                    String filePath = error.ErrorInfo.FileName.Replace(Utils.SourceTreeRootMarker,
-                                                                       isSrcRootEmpty ? String.Empty
-                                                                                      : RenderInfo.SrcRoot.Trim('"').TrimEnd('\\'));
-                    if (!isSrcRootEmpty)
-                        filePath = PathUtils.NormalizePath(filePath) ?? filePath;
-
-                    if (String.IsNullOrEmpty(filePath))
-                        filePath = " ";
+                    String filePath = PlogRenderUtils.ConvertPath(error.ErrorInfo.FileName, RenderInfo.SrcRoot, RenderInfo.TransformationMode);
 
                     writer.WriteLine($"##teamcity[inspection typeId='{error.ErrorInfo.ErrorCode}' message='{message}' file='{filePath}' line='{error.ErrorInfo.LineNumber}' SEVERITY='ERROR']");
                 }
@@ -767,16 +760,12 @@ namespace ProgramVerificationSystems.PlogConverter
                     : string.Join(", ", projects.Take(MaxProjectNames).ToArray());
                 writer.WriteLine("<td style='width: 10%;'>{0}</td>", projectsStr);
                 writer.Write("<td style='width: 20%;'>");
-                var fileName = error.ErrorInfo.FileName;
 
-                var isSrcRootEmpty = String.IsNullOrWhiteSpace(RenderInfo.SrcRoot);
-                fileName = fileName.Replace(Utils.SourceTreeRootMarker, isSrcRootEmpty ? string.Empty : RenderInfo.SrcRoot.Trim('"').TrimEnd('\\'));
-                if (!isSrcRootEmpty)
-                    fileName = PathUtils.NormalizePath(fileName) ?? fileName;
+                string fileName = PlogRenderUtils.ConvertPath(error.ErrorInfo.FileName, RenderInfo.SrcRoot, RenderInfo.TransformationMode);
 
                 if (!String.IsNullOrWhiteSpace(fileName))
                     writer.WriteLine("<a href='file:///{0}'>{1} ({2})</a>",
-                        fileName.Replace('\\', '/'), Path.GetFileName(fileName),
+                        fileName.Replace('\\', '/'), Path.GetFileName(PlogRenderUtils.RemoveSourceRootMarker(fileName)),
                         error.ErrorInfo.LineNumber.ToString(CultureInfo.InvariantCulture));
                 writer.WriteLine("</td>");
                 writer.WriteLine("<td style='width: 5%;'><a href='{0}'>{1}</a></td>", url, errorCode);
@@ -807,9 +796,7 @@ namespace ProgramVerificationSystems.PlogConverter
                         var analyzedSourceFile = error.ErrorInfo.AnalyzedSourceFiles[i];
                         if (!string.IsNullOrWhiteSpace(analyzedSourceFile))
                         {
-                            analyzedSourceFile = analyzedSourceFile.Replace(Utils.SourceTreeRootMarker, isSrcRootEmpty ? string.Empty : RenderInfo.SrcRoot.Trim('"').TrimEnd('\\'));
-                            if (!isSrcRootEmpty)
-                                analyzedSourceFile = PathUtils.NormalizePath(analyzedSourceFile) ?? analyzedSourceFile;
+                            analyzedSourceFile = PlogRenderUtils.ConvertPath(error.ErrorInfo.FileName, RenderInfo.SrcRoot, RenderInfo.TransformationMode);
                             if (i > 0 && i < count)
                                 analyzedSourceFilesStr += ", ";
                             analyzedSourceFilesStr += string.Format("<a href='file:///{0}'>{1}</a>", analyzedSourceFile.Replace('\\', '/'), Path.GetFileName(analyzedSourceFile));
@@ -1107,10 +1094,6 @@ namespace ProgramVerificationSystems.PlogConverter
 
             private string GetOutput(ErrorInfoAdapter error)
             {
-                var fileName = error.ErrorInfo.FileName;
-                var isSrcRootEmpty = String.IsNullOrWhiteSpace(RenderInfo.SrcRoot);
-                fileName = fileName.Replace(Utils.SourceTreeRootMarker, isSrcRootEmpty ? string.Empty : RenderInfo.SrcRoot.Trim('"').TrimEnd('\\'));
-
                 string securityCodes = string.Empty;
                 foreach (var security in ErrorCodeMappings)
                 {
@@ -1131,7 +1114,7 @@ namespace ProgramVerificationSystems.PlogConverter
 
                 return error.ErrorInfo.Level >= 1 && error.ErrorInfo.Level <= 3
                     ? string.Format("{0} ({1}): error {2}: {3}{4}",
-                        isSrcRootEmpty ? fileName : (PathUtils.NormalizePath(fileName) ?? fileName),
+                        PlogRenderUtils.ConvertPath(error.ErrorInfo.FileName, RenderInfo.SrcRoot, RenderInfo.TransformationMode),
                         error.ErrorInfo.LineNumber,
                         error.ErrorInfo.ErrorCode,
                         securityCodes + error.ErrorInfo.Message,
@@ -1325,12 +1308,10 @@ namespace ProgramVerificationSystems.PlogConverter
                 OutputNameTemplate = outputNameTemplate;
                 Logger = logger;
 
-                var isSrcRootEmpty = String.IsNullOrWhiteSpace(RenderInfo.SrcRoot);
                 foreach (var error in Errors)
                 {
-                    var filePath = isSrcRootEmpty ? error.ErrorInfo.FileName
-                                                  : error.ErrorInfo.FileName.Replace(Utils.SourceTreeRootMarker, RenderInfo.SrcRoot.Trim('"').TrimEnd('\\'));
-                    error.ErrorInfo.FileName = isSrcRootEmpty ? filePath : (PathUtils.NormalizePath(filePath) ?? filePath);
+                    error.ErrorInfo.FileName = PlogRenderUtils.ConvertPath(error.ErrorInfo.FileName, RenderInfo.SrcRoot, RenderInfo.TransformationMode, true);
+                    error.ErrorInfo.Positions = PlogRenderUtils.ConvertPositions(error.ErrorInfo.Positions, RenderInfo.SrcRoot, RenderInfo.TransformationMode);
                 }
 
                 var plogXmlDocument = new XmlDocument();
@@ -1352,7 +1333,8 @@ namespace ProgramVerificationSystems.PlogConverter
                         {
                             plogXmlDocument.LoadXml(File.ReadAllText(logPath, Encoding.UTF8));
                             var solutionNodeList = plogXmlDocument.SelectNodes("//NewDataSet/Solution_Path");
-                            _solutionPaths.Add(solutionNodeList[0]["SolutionPath"].InnerText ?? string.Empty);
+                            string solutionItem = solutionNodeList[0]["SolutionPath"].InnerText ?? string.Empty;
+                            _solutionPaths.Add(PlogRenderUtils.ConvertPath(solutionItem, RenderInfo.SrcRoot, RenderInfo.TransformationMode, true));
 
                             if (!string.IsNullOrWhiteSpace(solutionNodeList[0]["SolutionVersion"].InnerText))
                                 _solutionVersions.Add(solutionNodeList[0]["SolutionVersion"].InnerText);
@@ -1514,6 +1496,11 @@ namespace ProgramVerificationSystems.PlogConverter
                 LogExtension = ReflectionUtils.GetAttributes<DescriptionAttribute, LogRenderType>(renderType.ToString(),
                                                                                                   BindingFlags.Static | BindingFlags.Public)
                                               .First().Description;
+                foreach (var error in Errors)
+                {
+                    error.ErrorInfo.FileName = PlogRenderUtils.ConvertPath(error.ErrorInfo.FileName, RenderInfo.SrcRoot, RenderInfo.TransformationMode, true);
+                    error.ErrorInfo.Positions = PlogRenderUtils.ConvertPositions(error.ErrorInfo.Positions, RenderInfo.SrcRoot, RenderInfo.TransformationMode);
+                }
             }
 
             public void Render(Stream writer = null)
@@ -1558,6 +1545,47 @@ namespace ProgramVerificationSystems.PlogConverter
         public IList<string> Logs { get { return _plogs; } }
         public string OutputDir { get; set; }
         public string SrcRoot { get; set; }
+        public TransformationMode TransformationMode { get; set; }
     }
 
+    class PlogRenderUtils
+    {
+        public static string ConvertPath(string file, string srcRootDir, TransformationMode transformMode, bool addMarker = false)
+        {
+            if (string.IsNullOrWhiteSpace(srcRootDir))
+                return addMarker ? file : RemoveSourceRootMarker(file);
+            
+            var srcRoot = srcRootDir.Trim('"');
+            if (transformMode == TransformationMode.toAbsolute)
+            {
+                return PathUtils.TransformPathToAbsolute(file, srcRootDir);
+            }
+            else
+            {
+                string relativePath = RemoveSourceRootMarker(PathUtils.TransformPathToRelative(file, srcRootDir));
+                return !relativePath.StartsWith(ApplicationSettings.SourceTreeRootMarker) && addMarker ? 
+                    ApplicationSettings.SourceTreeRootMarker + Path.DirectorySeparatorChar + relativePath.Trim(Path.DirectorySeparatorChar) : relativePath;
+            }
+        }
+
+        public static string RemoveSourceRootMarker(string path)
+        {
+            return path.Replace(ApplicationSettings.SourceTreeRootMarker, string.Empty);
+        }
+
+        public static SourceFilePositions ConvertPositions(SourceFilePositions positions, string srcRootDir, TransformationMode transformMode)
+        {
+            if (string.IsNullOrWhiteSpace(srcRootDir))
+            {
+                return positions;
+            }
+            SourceFilePositions convertedPositions = new SourceFilePositions();
+            foreach (SourceFilePosition position in positions)
+            {
+                string convertedPath = PlogRenderUtils.ConvertPath(position.FilePath, srcRootDir, transformMode, true);
+                convertedPositions.Add(new SourceFilePosition(convertedPath, position.LineNumber));
+            }
+            return convertedPositions;
+        }
+    }
 }
