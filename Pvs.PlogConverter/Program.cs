@@ -159,7 +159,7 @@ namespace ProgramVerificationSystems.PlogConverter
 
             parsedArgs.RenderInfo.SrcRoot = converterOptions.SrcRoot;
 
-            if (string.IsNullOrWhiteSpace(converterOptions.SrcRoot) && converterOptions.TransformationMode == TransformationMode.toAbsolute)
+            if (string.IsNullOrWhiteSpace(converterOptions.SrcRoot) && converterOptions.TransformationMode == TransformationMode.toRelative)
             {
                 errorMessage = "You should setup --srcRoot option";
                 return false;
