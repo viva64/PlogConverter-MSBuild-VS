@@ -64,8 +64,11 @@ namespace ProgramVerificationSystems.PlogConverter
                 string solutionPath;
                 errorsSet.UnionWith(Utils.GetErrors(plog, out solutionPath));
             }
-            _errors = new List<ErrorInfoAdapter>(errorsSet);
 
+            foreach (var e in errorsSet)
+                e.ErrorInfo.InternAllFields();
+
+            _errors = new List<ErrorInfoAdapter>(errorsSet);
             IEnumerable<string> allDisabledErrors = null;
 
             if ((_parsedArgs.DisabledErrorCodes != null && _parsedArgs.DisabledErrorCodes.Count > 0) ||
