@@ -1128,12 +1128,8 @@ namespace ProgramVerificationSystems.PlogConverter
 
             private string GetOutput(ErrorInfoAdapter error)
             {
-                var fileName = error.ErrorInfo.FileName;
-                var isSrcRootEmpty = String.IsNullOrWhiteSpace(RenderInfo.SrcRoot);
-                fileName = fileName.Replace(Utils.SourceTreeRootMarker, isSrcRootEmpty ? string.Empty : RenderInfo.SrcRoot.Trim('"').TrimEnd('\\'));
-
                 DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
-                string securityCodes = string.Empty;          
+                string securityCodes = string.Empty;
                 if (hasCWE && error.ErrorInfo.CweId != default(uint))
                     securityCodes += $"[{error.ErrorInfo.ToCWEString()}]";
 
@@ -1150,7 +1146,7 @@ namespace ProgramVerificationSystems.PlogConverter
 
                 return error.ErrorInfo.Level >= 1 && error.ErrorInfo.Level <= 3
                     ? string.Format("{0} ({1}): error {2}: {3}{4}",
-                        isSrcRootEmpty ? fileName : (PathUtils.NormalizePath(fileName) ?? fileName),
+                        PlogRenderUtils.ConvertPath(error.ErrorInfo.FileName, RenderInfo.SrcRoot, RenderInfo.TransformationMode),
                         error.ErrorInfo.LineNumber,
                         error.ErrorInfo.ErrorCode,
                         securityCodes + error.ErrorInfo.Message,
