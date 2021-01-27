@@ -295,8 +295,9 @@ namespace ProgramVerificationSystems.PlogConverter
                                                   Convert.ToUInt32(firstChildContent.Substring(ErrorInfo.CWEPrefix.Length))
                                                 : default(uint);
                     break;
-                case DataColumnNames.ErrorListMisra:
-                    errorInfo.ErrorInfo.MisraId = ErrorInfo.TryParseMisraId(firstChildContent);
+                case DataColumnNames.ErrorListMisra: // For compatibility with xml version 6 and below
+                case DataColumnNames.ErrorListSast:
+                    errorInfo.ErrorInfo.SastId = firstChildContent;
                     break;
                 // Additional values
                 case DataColumnNames.ErrorListFavIcon:

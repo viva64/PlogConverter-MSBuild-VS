@@ -43,7 +43,7 @@
     </StartupObject>
   </PropertyGroup>
   <ItemGroup Condition="'$(PVSDev)' != 'true'">
-   <Reference Include="PVS-Studio_Cmd, Culture=neutral, PublicKeyToken=0bdd5054f5d6a4a5, processorArchitecture=MSIL">
+    <Reference Include="PVS-Studio_Cmd, Culture=neutral, PublicKeyToken=0bdd5054f5d6a4a5, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(TargetDir)PVS-Studio_Cmd.exe</HintPath>
     </Reference>

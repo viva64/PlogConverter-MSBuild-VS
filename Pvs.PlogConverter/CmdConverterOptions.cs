@@ -65,7 +65,7 @@ namespace ProgramVerificationSystems.PlogConverter
         /// </summary>
         /// <example>--analyzer=GA:1,2;64:1,2,3</example>
         [OptionList(AnalyzerLevelFilter_ShortName, AnalyzerLevelFilter_LongName, Separator = ';', Required = false,
-            HelpText = "Specifies analyzer(s) and level(s) to be used for filtering, i.e. GA:1,2;64:1;OP:1,2,3;CS:1;MISRA:1,2")]
+            HelpText = "Specifies analyzer(s) and level(s) to be used for filtering, i.e. GA:1,2;64:1;OP:1,2,3;CS:1;MISRA:1,2;OWASP:1")]
         public IList<string> AnalyzerLevelFilter { get; set; }
 
         /// <summary>
@@ -103,7 +103,7 @@ namespace ProgramVerificationSystems.PlogConverter
         /// </summary>
         /// <example>--errorCodeMapping=CWE</example>
         [OptionList('m', "errorCodeMapping", Separator = ',', Required = false,
-            HelpText = "Enable mapping of PVS-Studio error codes to other rule sets. Possible values: CWE,MISRA")]
+            HelpText = "Enable mapping of PVS-Studio error codes to other rule sets. Possible values: CWE,MISRA,OWASP,AUTOSAR")]
         public IList<String> ErrorCodeMapping { get; set; }
 
         /// <summary>

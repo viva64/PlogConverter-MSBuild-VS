@@ -198,11 +198,16 @@ namespace ProgramVerificationSystems.PlogConverter
                 return false;
             }
 
-            if (errorCodeMappings.Contains(ErrorCodeMapping.MISRA) &&
-                parsedArgs.LevelMap.Any() && 
-                !parsedArgs.LevelMap.Any(item => item.Key == AnalyzerType.MISRA))
+            if (parsedArgs.LevelMap.Any())
             {
-                warningMessages.Add(string.Format("MISRA mapping is specified, but MISRA rules group is not enabled. Check the '-{0}' flag.", CmdConverterOptions.AnalyzerLevelFilter_ShortName));
+                if (errorCodeMappings.Contains(ErrorCodeMapping.MISRA) && !parsedArgs.LevelMap.Any(item => item.Key == AnalyzerType.MISRA))
+                    warningMessages.Add(string.Format("MISRA mapping is specified, but MISRA rules group is not enabled. Check the '-{0}' flag.", CmdConverterOptions.AnalyzerLevelFilter_ShortName));
+
+                if (errorCodeMappings.Contains(ErrorCodeMapping.OWASP) && !parsedArgs.LevelMap.Any(item => item.Key == AnalyzerType.OWASP))
+                    warningMessages.Add(string.Format("OWASP mapping is specified, but OWASP rules group is not enabled. Check the '-{0}' flag.", CmdConverterOptions.AnalyzerLevelFilter_ShortName));
+
+                if (errorCodeMappings.Contains(ErrorCodeMapping.AUTOSAR) && !parsedArgs.LevelMap.Any(item => item.Key == AnalyzerType.AUTOSAR))
+                    warningMessages.Add(string.Format("AUTOSAR mapping is specified, but AUTOSAR rules group is not enabled. Check the '-{0}' flag.", CmdConverterOptions.AnalyzerLevelFilter_ShortName));
             }
 
             // Check if provided outputNameTemplate is a valid file name
