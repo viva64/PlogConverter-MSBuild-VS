@@ -465,20 +465,6 @@ namespace ProgramVerificationSystems.PlogConverter
                   + Regex.Escape(new string(Path.GetInvalidPathChars())) + "]");
             return !containsABadCharacter.IsMatch(testName);
         }
-
-        public static void DetectCodeMappings(IEnumerable<ErrorCodeMapping> errorCodeMappings, out bool hasCWE, out bool hasSAST)
-        {
-            hasCWE = false;
-            hasSAST = false;
-
-            foreach (var security in errorCodeMappings)
-            {
-                if (security == ErrorCodeMapping.CWE)
-                    hasCWE = true;
-                if (security == ErrorCodeMapping.MISRA || security == ErrorCodeMapping.OWASP || security == ErrorCodeMapping.AUTOSAR)
-                    hasSAST = true;
-            }
-        }
     }
 
     public static class ErrorsFilters

@@ -162,6 +162,21 @@ namespace ProgramVerificationSystems.PlogConverter
             File.WriteAllText(jsonLogPath, JsonConvert.SerializeObject(jsonReport, Newtonsoft.Json.Formatting.Indented), Encoding.UTF8);
         }
 
+
+        private static void DetectCodeMappings(IEnumerable<ErrorCodeMapping> errorCodeMappings, out bool hasCWE, out bool hasSAST)
+        {
+            hasCWE = false;
+            hasSAST = false;
+
+            foreach (var security in errorCodeMappings)
+            {
+                if (security == ErrorCodeMapping.CWE)
+                    hasCWE = true;
+                if (security == ErrorCodeMapping.MISRA || security == ErrorCodeMapping.OWASP || security == ErrorCodeMapping.AUTOSAR)
+                    hasSAST = true;
+            }
+        }
+
         #region Implementation for CSV Output
 
         private class CsvRenderer : IPlogRenderer
@@ -215,7 +230,7 @@ namespace ProgramVerificationSystems.PlogConverter
                             "Error code"
                         };
 
-                        Utils.DetectCodeMappings(ErrorCodeMappings, out bool hasCWE, out bool hasSAST);
+                        DetectCodeMappings(ErrorCodeMappings, out bool hasCWE, out bool hasSAST);
 
                         if (hasCWE)
                             headerRow.Add("CWE");
@@ -385,7 +400,7 @@ namespace ProgramVerificationSystems.PlogConverter
                             break;
                     }
 
-                    Utils.DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
+                    DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
                     string securityCodes = string.Empty;
 
                     if (hasCWE && error.ErrorInfo.CweId != default(uint))
@@ -500,7 +515,7 @@ namespace ProgramVerificationSystems.PlogConverter
                     }
 
                     String securityMessage = String.Empty;
-                    Utils.DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
+                    DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
                     var cwe = error.ErrorInfo.ToCWEString();
                     if (hasCWE && !String.IsNullOrEmpty(cwe))
                         securityMessage = cwe;
@@ -623,7 +638,7 @@ namespace ProgramVerificationSystems.PlogConverter
                 sb.AppendLine("<th style=\"width: 20%;\">File</th>");
                 sb.AppendLine("<th style=\"width: 5%;\">Code</th>");
 
-                Utils.DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
+                DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
                 if (hasCWE)
                     sb.AppendLine($"<th style=\"width: {GetCWEColumntWidth()}%;\">CWE</th>");
                 if (hasSAST)
@@ -650,7 +665,7 @@ namespace ProgramVerificationSystems.PlogConverter
             private int GetMessageColumnWidth()
             {
                 int width = DefaultMessageColumntWidth;
-                Utils.DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
+                DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
                 if (hasCWE)
                     width -= GetCWEColumntWidth();
                 if (hasSAST)
@@ -724,11 +739,19 @@ namespace ProgramVerificationSystems.PlogConverter
             {
                 var groupedErrorInfoMap = GroupByErrorInfo(Errors);
                 var analyzerTypes = groupedErrorInfoMap.Keys;
+                var colspan = 5;
+                DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
+                if (hasCWE)
+                    ++colspan;
+                if (hasSAST)
+                    ++colspan;
+
                 foreach (var analyzerType in analyzerTypes)
                 {
                     writer.WriteLine("<tr style='background: lightcyan;'>");
                     writer.WriteLine(
-                        "<td colspan='5' style='color: red; text-align: center; font-size: 1.2em;'>{0}</td>",
+                        "<td colspan='{0}' style='color: red; text-align: center; font-size: 1.2em;'>{1}</td>",
+                        colspan,
                         Utils.GetDescription(analyzerType));
                     writer.WriteLine("</tr>");
                     var groupedErrorInfo = groupedErrorInfoMap[analyzerType];
@@ -771,7 +794,7 @@ namespace ProgramVerificationSystems.PlogConverter
                 writer.WriteLine("</td>");
                 writer.WriteLine("<td style='width: 5%;'><a href='{0}'>{1}</a></td>", url, errorCode);
 
-                Utils.DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
+                DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
                 if (hasCWE)
                     writer.WriteLine("<td style='width: {0}%;'><a href='{1}'>{2}</a></td>",
                                      GetCWEColumntWidth(),
@@ -1109,7 +1132,7 @@ namespace ProgramVerificationSystems.PlogConverter
                 var isSrcRootEmpty = String.IsNullOrWhiteSpace(RenderInfo.SrcRoot);
                 fileName = fileName.Replace(Utils.SourceTreeRootMarker, isSrcRootEmpty ? string.Empty : RenderInfo.SrcRoot.Trim('"').TrimEnd('\\'));
 
-                Utils.DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
+                DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
                 string securityCodes = string.Empty;          
                 if (hasCWE && error.ErrorInfo.CweId != default(uint))
                     securityCodes += $"[{error.ErrorInfo.ToCWEString()}]";
