@@ -159,7 +159,7 @@ namespace ProgramVerificationSystems.PlogConverter
 
             parsedArgs.RenderInfo.SrcRoot = converterOptions.SrcRoot;
 
-            if (string.IsNullOrWhiteSpace(converterOptions.SrcRoot) && converterOptions.TransformationMode == TransformationMode.toRelative)
+            if (ArgmumetsContainsTransformMode(args) && !ArgmumetsContainsSrcRoot(args))
             {
                 errorMessage = "You should setup --srcRoot option";
                 return false;
@@ -233,6 +233,24 @@ namespace ProgramVerificationSystems.PlogConverter
 
             errorMessage = string.Empty;
             return true;
+        }
+        private static bool ArgmumetsContainsSrcRoot(string[] args)
+        {
+            return ArgumentsContainsOption(args, nameof(CmdConverterOptions.SrcRoot));
+        }
+        private static bool ArgmumetsContainsTransformMode(string[] args)
+        {
+            return ArgumentsContainsOption(args, nameof(CmdConverterOptions.TransformationMode));
+        }
+        private static bool ArgumentsContainsOption(string[] args, string option)
+        {
+            string longName = ((CommandLine.BaseOptionAttribute)typeof(CmdConverterOptions).GetProperty(option).GetCustomAttributes(typeof(CommandLine.OptionAttribute), true)[0]).LongName;
+            char? shortName = ((CommandLine.BaseOptionAttribute)typeof(CmdConverterOptions).GetProperty(option).GetCustomAttributes(typeof(CommandLine.OptionAttribute), true)[0]).ShortName;
+
+            string optionLongName = "--" + longName;
+            string optionShortName = shortName != null ? "-" + shortName : string.Empty;
+
+            return args.Contains(optionLongName) || args.Contains(optionShortName);
         }
     }
 }
