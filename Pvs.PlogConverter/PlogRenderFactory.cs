@@ -809,7 +809,8 @@ namespace ProgramVerificationSystems.PlogConverter
                             analyzedSourceFile = PlogRenderUtils.ConvertPath(error.ErrorInfo.FileName, RenderInfo.SrcRoot, RenderInfo.TransformationMode);
                             if (i > 0 && i < count)
                                 analyzedSourceFilesStr += ", ";
-                            analyzedSourceFilesStr += string.Format("<a href='file:///{0}'>{1}</a>", analyzedSourceFile.Replace('\\', '/'), Path.GetFileName(analyzedSourceFile));
+                            if (!string.IsNullOrWhiteSpace(analyzedSourceFile))
+                                analyzedSourceFilesStr += string.Format("<a href='file:///{0}'>{1}</a>", analyzedSourceFile.Replace('\\', '/'), Path.GetFileName(analyzedSourceFile));
                         }
                     }
 
