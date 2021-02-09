@@ -12,7 +12,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("PVS-Studio LLC")]
 [assembly: AssemblyProduct("PVS-Studio")]
-[assembly: AssemblyCopyright("Copyright (c) 2008-2020 PVS-Studio LLC")]
+[assembly: AssemblyCopyright("Copyright (c) 2020-2021 PVS-Studio LLC")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
