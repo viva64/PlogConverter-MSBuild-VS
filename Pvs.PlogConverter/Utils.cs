@@ -192,6 +192,7 @@ namespace ProgramVerificationSystems.PlogConverter
 
         private static IEnumerable<ErrorInfoAdapter> GetErrorsFromXml(out string solutionName, string xmlText)
         {
+            // todo: Add plog version check for a subsequent upgrade
             var plogXmlDocument = new XmlDocument();
             plogXmlDocument.LoadXml(xmlText);
             var solPathNodeList = plogXmlDocument.GetElementsByTagName(DataColumnNames.SolutionPath);
