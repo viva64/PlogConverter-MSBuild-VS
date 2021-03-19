@@ -624,24 +624,29 @@ namespace ProgramVerificationSystems.PlogConverter
                 sb.AppendLine("  font: 1.2em bold Comic Sans MS Verdana;");
                 sb.AppendLine("  text-align: center;");
                 sb.AppendLine("}");
+                sb.AppendLine("caption");
+                sb.AppendLine("{");
+                sb.AppendLine("  text-align:left;");
+                sb.AppendLine("}");
                 sb.AppendLine("</style>");
                 sb.AppendLine("</head>");
                 sb.AppendLine("<body>");
                 sb.AppendLine("<table style=\"width: 100%; font: 12pt normal Century Gothic;\" >");
-                sb.AppendLine("<caption style=\"font-weight: bold;background: #fff;color: #000;border: none !important;\">MESSAGES</caption>");
+                sb.AppendLine("<caption align=\"left\" style=\"font-weight: bold;background: #fff;color: #000;border: none !important;\">MESSAGES</caption>");
                 sb.AppendLine("<tr style=\"background: black; color: white;\">");
-                sb.AppendLine("<th style=\"width: 10%;\">Project</th>");
-                sb.AppendLine("<th style=\"width: 20%;\">File</th>");
-                sb.AppendLine("<th style=\"width: 5%;\">Code</th>");
 
+                sb.AppendLine("<th style=\"width: 5%;\">Code</th>");
                 DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
                 if (hasCWE)
                     sb.AppendLine($"<th style=\"width: {GetCWEColumntWidth()}%;\">CWE</th>");
                 if (hasSAST)
                     sb.AppendLine($"<th style=\"width: {GetSASTColumntWidth()}%;\">SAST</th>");
 
-                sb.AppendLine($"<th style=\"width: {GetMessageColumnWidth()}%;\">Message</th>");
+                sb.AppendLine($"<th style=\"width: {GetMessageColumnWidth()}%;\">Message</th>");               
+                sb.AppendLine("<th style=\"width: 10%;\">Project</th>");
+                sb.AppendLine("<th style=\"width: 20%;\">File</th>");
                 sb.AppendLine("<th style=\"width: 20%;\">Analyzed Source File(s)</th>");
+
                 sb.AppendLine("</tr>");
 
                 _htmlFoot = "</table></body></html>";
@@ -770,6 +775,20 @@ namespace ProgramVerificationSystems.PlogConverter
                 string url = ErrorCodeUrlHelper.GetVivaUrlCode(error.ErrorInfo.ErrorCode, false);
 
                 writer.WriteLine("<tr>");
+                
+                writer.WriteLine("<td style='width: 5%;'><a href='{0}'>{1}</a></td>", url, errorCode);
+
+                DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
+                if (hasCWE)
+                    writer.WriteLine("<td style='width: {0}%;'><a href='{1}'>{2}</a></td>",
+                                     GetCWEColumntWidth(),
+                                     ErrorCodeUrlHelper.GetCWEUrl(error.ErrorInfo),
+                                     error.ErrorInfo.ToCWEString());
+                if (hasSAST)
+                    writer.WriteLine("<td style='width: {0}%;'>{1}</td>", GetSASTColumntWidth(), error.ErrorInfo.SastId);
+
+                writer.WriteLine("<td style='width: {0}%;'>{1}</td>", GetMessageColumnWidth(), message);
+
                 var projects = error.ErrorInfo.ProjectNames.ToArray();
                 string projectsStr = (projects.Length > MaxProjectNames)
                     ? string.Join(", ", projects.Take(MaxProjectNames).ToArray().Concat(new string[] { "..." }))
@@ -784,18 +803,6 @@ namespace ProgramVerificationSystems.PlogConverter
                         fileName.Replace('\\', '/'), Path.GetFileName(PlogRenderUtils.RemoveSourceRootMarker(fileName)),
                         error.ErrorInfo.LineNumber.ToString(CultureInfo.InvariantCulture));
                 writer.WriteLine("</td>");
-                writer.WriteLine("<td style='width: 5%;'><a href='{0}'>{1}</a></td>", url, errorCode);
-
-                DetectCodeMappings(ErrorCodeMappings, out var hasCWE, out var hasSAST);
-                if (hasCWE)
-                    writer.WriteLine("<td style='width: {0}%;'><a href='{1}'>{2}</a></td>",
-                                     GetCWEColumntWidth(),
-                                     ErrorCodeUrlHelper.GetCWEUrl(error.ErrorInfo),
-                                     error.ErrorInfo.ToCWEString());
-                if (hasSAST)
-                    writer.WriteLine("<td style='width: {0}%;'>{1}</td>", GetSASTColumntWidth(), error.ErrorInfo.SastId);
-
-                writer.WriteLine("<td style='width: {0}%;'>{1}</td>", GetMessageColumnWidth(), message);
 
                 if (error.ErrorInfo.AnalyzedSourceFiles != null)
                 {
@@ -806,7 +813,7 @@ namespace ProgramVerificationSystems.PlogConverter
                         var analyzedSourceFile = error.ErrorInfo.AnalyzedSourceFiles[i];
                         if (!string.IsNullOrWhiteSpace(analyzedSourceFile))
                         {
-                            analyzedSourceFile = PlogRenderUtils.ConvertPath(error.ErrorInfo.FileName, RenderInfo.SrcRoot, RenderInfo.TransformationMode);
+                            analyzedSourceFile = PlogRenderUtils.ConvertPath(analyzedSourceFile, RenderInfo.SrcRoot, RenderInfo.TransformationMode);
                             if (i > 0 && i < count)
                                 analyzedSourceFilesStr += ", ";
                             if (!string.IsNullOrWhiteSpace(analyzedSourceFile))
