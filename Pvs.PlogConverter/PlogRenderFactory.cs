@@ -632,7 +632,7 @@ namespace ProgramVerificationSystems.PlogConverter
                 sb.AppendLine("</head>");
                 sb.AppendLine("<body>");
                 sb.AppendLine("<table style=\"width: 100%; font: 12pt normal Century Gothic;\" >");
-                sb.AppendLine("<caption align=\"left\" style=\"font-weight: bold;background: #fff;color: #000;border: none !important;\">MESSAGES</caption>");
+                sb.AppendLine("<caption style=\"font-weight: bold;background: #fff;color: #000;border: none !important;\">MESSAGES</caption>");
                 sb.AppendLine("<tr style=\"background: black; color: white;\">");
 
                 sb.AppendLine("<th style=\"width: 5%;\">Code</th>");
