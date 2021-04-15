@@ -864,16 +864,6 @@ namespace ProgramVerificationSystems.PlogConverter
         private sealed class PlogTotalsRenderer : IPlogRenderer
         {
             private const string MergedReportName = "MergedReport";
-            private readonly string _commandLineTotals = 
-                "PVS - Studio analysis results" + Environment.NewLine +
-                "General Analysis L1:{0} + L2:{1} + L3:{2} = {3}" + Environment.NewLine +
-                "Optimization L1:{4} + L2:{5} + L3:{6} = {7}" + Environment.NewLine +
-                "64-bit issues L1:{8} + L2:{9} + L3:{10} = {11}" + Environment.NewLine +
-                "Customer Specific L1:{12} + L2:{13} + L3:{14} = {15}" + Environment.NewLine +
-                "MISRA L1:{16} + L2:{17} + L3:{18} = {19}" + Environment.NewLine +
-                "AUTOSAR L1:{20} + L2:{21} + L3:{22} = {23}" + Environment.NewLine +
-                "OWASP L1:{24} + L2:{25} + L3:{26} = {27}" + Environment.NewLine +
-                "Total L1:{28} + L2:{29} + L3:{30} = {31}";
 
             public string LogExtension { get; }
             public RenderInfo RenderInfo { get; private set; }
@@ -942,9 +932,10 @@ namespace ProgramVerificationSystems.PlogConverter
 
             private string CalculateSummary()
             {
+                int failIndex = 3;
                 var totalStat = new Dictionary<AnalyzerType, int[]>
                 {
-                    {AnalyzerType.Unknown, new[] {0, 0, 0}},
+                    {AnalyzerType.Unknown, new[] {0, 0, 0, 0}},
                     {AnalyzerType.General, new[] {0, 0, 0}},
                     {AnalyzerType.Optimization, new[] {0, 0, 0}},
                     //VivaMP is no longer supported by PVS-Studio, leaving for compatibility
@@ -965,6 +956,9 @@ namespace ProgramVerificationSystems.PlogConverter
                 {
                     totalStat[error.ErrorInfo.AnalyzerType][error.ErrorInfo.Level - 1]++;
                 }
+
+                foreach (var error in Errors.Where(error => error.ErrorInfo.AnalyzerType == AnalyzerType.Unknown))
+                    totalStat[AnalyzerType.Unknown][failIndex]++;
 
                 var gaTotal = 0;
                 for (var i = 0; i < totalStat[AnalyzerType.General].Length; i++)
@@ -1007,16 +1001,17 @@ namespace ProgramVerificationSystems.PlogConverter
                 }
 
                 var total = l1Total + l2Total + l3Total;
-                return
-                    string.Format(_commandLineTotals,
-                        totalStat[AnalyzerType.General][0],          totalStat[AnalyzerType.General][1],          totalStat[AnalyzerType.General][2],          gaTotal,
-                        totalStat[AnalyzerType.Optimization][0],     totalStat[AnalyzerType.Optimization][1],     totalStat[AnalyzerType.Optimization][2],     opTotal,
-                        totalStat[AnalyzerType.Viva64][0],           totalStat[AnalyzerType.Viva64][1],           totalStat[AnalyzerType.Viva64][2],           total64,
-                        totalStat[AnalyzerType.CustomerSpecific][0], totalStat[AnalyzerType.CustomerSpecific][1], totalStat[AnalyzerType.CustomerSpecific][2], csTotal,
-                        totalStat[AnalyzerType.MISRA][0],            totalStat[AnalyzerType.MISRA][1],            totalStat[AnalyzerType.MISRA][2],            misraTotal,
-                        totalStat[AnalyzerType.AUTOSAR][0],          totalStat[AnalyzerType.AUTOSAR][1],          totalStat[AnalyzerType.AUTOSAR][2],          autosarTotal,
-                        totalStat[AnalyzerType.OWASP][0],            totalStat[AnalyzerType.OWASP][1],            totalStat[AnalyzerType.OWASP][2],            owaspTotal,
-                        l1Total, l2Total, l3Total, total) + Environment.NewLine;
+
+                return $@"PVS - Studio analysis results
+General Analysis L1:{totalStat[AnalyzerType.General][0]} + L2:{totalStat[AnalyzerType.General][1]} + L3:{totalStat[AnalyzerType.General][2]} = {gaTotal}
+Optimization L1:{totalStat[AnalyzerType.Optimization][0]} + L2:{totalStat[AnalyzerType.Optimization][1]} + L3:{totalStat[AnalyzerType.Optimization][2]} = {opTotal}
+64-bit issues L1:{totalStat[AnalyzerType.Viva64][0]} + L2:{totalStat[AnalyzerType.Viva64][1]} + L3:{totalStat[AnalyzerType.Viva64][2]} = {total64}
+Customer Specific L1:{totalStat[AnalyzerType.CustomerSpecific][0]} + L2:{totalStat[AnalyzerType.CustomerSpecific][1]} + L3:{totalStat[AnalyzerType.CustomerSpecific][2]} = {csTotal}
+MISRA L1:{totalStat[AnalyzerType.MISRA][0]} + L2:{totalStat[AnalyzerType.MISRA][1]} + L3:{totalStat[AnalyzerType.MISRA][2]} = {misraTotal}
+AUTOSAR L1:{totalStat[AnalyzerType.AUTOSAR][0]} + L2:{totalStat[AnalyzerType.AUTOSAR][1]} + L3:{totalStat[AnalyzerType.AUTOSAR][2]} = {autosarTotal}
+OWASP L1:{totalStat[AnalyzerType.OWASP][0]} + L2:{totalStat[AnalyzerType.OWASP][1]} + L3:{totalStat[AnalyzerType.OWASP][2]} = {owaspTotal}
+Fails = {totalStat[AnalyzerType.Unknown][failIndex]}
+Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
             }
         }
 
