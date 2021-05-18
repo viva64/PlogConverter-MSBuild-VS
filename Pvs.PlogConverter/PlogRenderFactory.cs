@@ -364,7 +364,7 @@ namespace ProgramVerificationSystems.PlogConverter
                         if (Errors != null && Errors.Any())
                             WriteTaskList(tasksWriter);
                         else
-                            tasksWriter.WriteLine(String.Format("www.viva64.com/en/w\t1\terr\t{0}{1}", NoMessage, Environment.NewLine));
+                            tasksWriter.WriteLine(String.Format("https://pvs-studio.com/en/docs/warnings\t1\terr\t{0}{1}", NoMessage, Environment.NewLine));
                         if (writer is FileStream)
                             OnRenderComplete(new RenderCompleteEventArgs((writer as FileStream).Name));
                     }
