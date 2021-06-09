@@ -1089,7 +1089,7 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
             private void WriteText(TextWriter txtWriter)
             {
                 var outputIndex = 0;
-                var currentType = AnalyzerType.Unknown;
+                var currentType = AnalyzerType.Transient;
                 foreach (var error in Errors)
                 {
                     if (error.ErrorInfo.AnalyzerType != currentType)
@@ -1144,7 +1144,25 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
                         error.ErrorInfo.ErrorCode,
                         securityCodes + error.ErrorInfo.Message,
                         Environment.NewLine)
-                    : error.ErrorInfo.Message;
+                    : GetFailOutput(error.ErrorInfo);
+            }
+
+            private string GetFailOutput(ErrorInfo errorInfo)
+            {
+                bool pathEmpty = String.IsNullOrWhiteSpace(errorInfo.FileName);
+                bool codeEmpty = String.IsNullOrWhiteSpace(errorInfo.ErrorCode);
+                var path = PlogRenderUtils.ConvertPath(errorInfo.FileName, RenderInfo.SrcRoot, RenderInfo.TransformationMode);
+
+                if (pathEmpty && !codeEmpty)
+                    return $"error {errorInfo.ErrorCode}: {errorInfo.Message} {Environment.NewLine}";
+                
+                if (!pathEmpty && codeEmpty)
+                    return $"{path} ({errorInfo.LineNumber}): {errorInfo.Message} {Environment.NewLine}";
+                
+                if (!pathEmpty && !codeEmpty)
+                    return $"{path} ({errorInfo.LineNumber}): error {errorInfo.ErrorCode}: {errorInfo.Message} {Environment.NewLine}";
+
+                return errorInfo.Message;
             }
         }
 
