@@ -610,7 +610,7 @@ namespace ProgramVerificationSystems.PlogConverter
                 sb.AppendLine("<html xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"en\">");
                 sb.AppendLine("<head>");
                 sb.AppendLine("<title>Messages</title>");
-                sb.AppendLine("<meta http-equiv=\"content-type\" content=\"text/html; charset=windows-1251\"/>");
+                sb.AppendLine("<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\"/>");
                 sb.AppendLine("<style type=\"text/css\">");
                 sb.AppendLine("td");
                 sb.AppendLine("{");
@@ -1355,6 +1355,7 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
                 {
                     error.ErrorInfo.FileName = PlogRenderUtils.ConvertPath(error.ErrorInfo.FileName, RenderInfo.SrcRoot, RenderInfo.TransformationMode, true);
                     error.ErrorInfo.Positions = PlogRenderUtils.ConvertPositions(error.ErrorInfo.Positions, RenderInfo.SrcRoot, RenderInfo.TransformationMode);
+                    error.ErrorInfo.AnalyzedSourceFiles = PlogRenderUtils.ConvertPaths(error.ErrorInfo.AnalyzedSourceFiles, RenderInfo.SrcRoot, RenderInfo.TransformationMode);
                 }
 
                 var plogXmlDocument = new XmlDocument();
@@ -1630,5 +1631,18 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
             }
             return convertedPositions;
         }
+
+        public static List<string> ConvertPaths(List<string> paths, string srcRootDir, TransformationMode transformMode)
+        {
+            if (string.IsNullOrWhiteSpace(srcRootDir))
+                return paths;
+
+            var convertedPositions = new List<string>();
+            foreach (var path in paths)
+                convertedPositions.Add(PlogRenderUtils.ConvertPath(path, srcRootDir, transformMode, true));
+
+            return convertedPositions;
+        }
+
     }
 }
