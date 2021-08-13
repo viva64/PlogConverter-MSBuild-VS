@@ -142,6 +142,7 @@ namespace ProgramVerificationSystems.PlogConverter
             }
 
             parsedArgs.RenderInfo.OutputDir = converterOptions.OutputPath ?? DefaultOutputFolder;
+            parsedArgs.RenderInfo.GRP = converterOptions.GRP;
 
             if (!Directory.Exists(parsedArgs.RenderInfo.OutputDir))
             {
@@ -223,6 +224,12 @@ namespace ProgramVerificationSystems.PlogConverter
                 errorMessage = string.Format("Settings file '{0}' does not exist.", converterOptions.SettingsPath);
                 return false;
             }
+
+            if (!String.IsNullOrEmpty(parsedArgs.RenderInfo.GRP) && renderTypes.Any(e => e != LogRenderType.Misra))
+                Logger.Log("The use of the 'grp' flag is valid only for the 'misra' format. Otherwise, it will be ignored.");
+
+            if (renderTypes.Count == 0)
+                parsedArgs.RenderInfo.AllLogRenderType = true;
 
             parsedArgs.RenderTypes = renderTypes;
             parsedArgs.ErrorCodeMappings = errorCodeMappings;

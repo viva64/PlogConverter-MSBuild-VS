@@ -123,7 +123,7 @@ namespace ProgramVerificationSystems.PlogConverter
         private IPlogRenderer GetRenderService<T>(LogRenderType renderType, Action<LogRenderType, string> completedAction) where T : class, IPlogRenderer
         {
             var renderer = Activator.CreateInstance(typeof(T), new object[] { _parsedArgs.RenderInfo,
-                                                                              _errors.ExcludeFalseAlarms(),
+                                                                              _errors.ExcludeFalseAlarms(renderType),
                                                                               _parsedArgs.ErrorCodeMappings,
                                                                               _parsedArgs.OutputNameTemplate,
                                                                               renderType,
@@ -159,6 +159,8 @@ namespace ProgramVerificationSystems.PlogConverter
                     return GetRenderService<SarifRenderer>(renderType, completedAction);
                 case LogRenderType.JSON:
                     return GetRenderService<PlogJsonRenderer>(renderType, completedAction);
+                case LogRenderType.Misra:
+                    return GetRenderService<MisraComplianceRenderer>(renderType, completedAction);
                 default:
                     goto case LogRenderType.Html;
             }
@@ -1488,7 +1490,7 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
 
         #endregion
 
-        #region Generate SARIF
+        #region Implementation for SARIF Output
 
         private sealed class SarifRenderer : BaseHtmlGeneratorRender
         {
@@ -1569,6 +1571,44 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
         }
 
         #endregion
+
+        #region Implementation for Compliance output
+        private sealed class MisraComplianceRenderer : BaseHtmlGeneratorRender
+        {
+            public MisraComplianceRenderer(RenderInfo renderInfo, IEnumerable<ErrorInfoAdapter> errors, IEnumerable<ErrorCodeMapping> errorCodeMappings, 
+                                      string outputNameTemplate, LogRenderType renderType, ILogger logger = null)
+                : base(renderInfo, errors, errorCodeMappings, outputNameTemplate, renderType, logger)
+            {
+            }
+
+            protected override (string, string) GetGenerateData(string jsonLog)
+            {
+                string defaultComplianceDir = Path.Combine(RenderInfo.OutputDir, "misracompliance");
+                if (!string.IsNullOrEmpty(OutputNameTemplate))
+                {
+                    if (RenderInfo.AllLogRenderType)
+                    {
+                        defaultComplianceDir = Path.Combine(RenderInfo.OutputDir, $"{OutputNameTemplate}_misra");
+                    }
+                    else
+                    {
+                        defaultComplianceDir = Path.Combine(RenderInfo.OutputDir, OutputNameTemplate);
+                    }
+                }
+                    
+                if (Directory.Exists(defaultComplianceDir))
+                    Directory.Delete(defaultComplianceDir, true);
+
+                string arguments = $" \"{jsonLog}\" -t misra -o \"{defaultComplianceDir.TrimEnd(new char[] { '\\', '/' })}\"";
+
+                if (!String.IsNullOrEmpty(RenderInfo.GRP))
+                    arguments += $" --grp \"{RenderInfo.GRP}\"";
+
+                return (arguments, defaultComplianceDir);
+            }
+        }
+
+        #endregion
     }
 
     public class ParsedArguments
@@ -1590,6 +1630,8 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
         public string OutputDir { get; set; }
         public string SrcRoot { get; set; }
         public TransformationMode TransformationMode { get; set; }
+        public string GRP { get; set; } = String.Empty;
+        public bool AllLogRenderType { get; set; } = false;
     }
 
     class PlogRenderUtils

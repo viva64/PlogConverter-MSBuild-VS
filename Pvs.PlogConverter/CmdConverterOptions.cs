@@ -73,7 +73,7 @@ namespace ProgramVerificationSystems.PlogConverter
         /// </summary>
         /// <example>--renderTypes=Html,Totals,Txt,Csv,Plog</example>
         [OptionList('t', "renderTypes", Separator = ',', Required = false,
-            HelpText = "Render types for output. Supported renderers: Html,FullHtml,Totals,Txt,Csv,Tasks,Plog,TeamCity,Sarif,JSON")]
+            HelpText = "Render types for output. Supported renderers: Html,FullHtml,Totals,Txt,Csv,Tasks,Plog,TeamCity,Sarif,JSON,Misra")]
         public IList<string> PlogRenderTypes { get; set; }
 
         /// <summary>
@@ -113,6 +113,13 @@ namespace ProgramVerificationSystems.PlogConverter
         [Option('w', "indicate-warnings", Required = false,
             HelpText = "Set this option to detect the presense of analyzer warnings after filtering analysis log by setting the converter exit code to '2'.")]
         public bool IndicateWarnings { get; set; }
+
+        /// <summary>
+        ///     Path to Guideline Re-categorization Plan (GRP) file
+        /// </summary>
+        /// <example>--grp=c:\Users\Settings.xml</example>
+        [Option("grp", Required = false, DefaultValue = "", HelpText = "Path to txt file with Guideline Re-categorization Plan. Used only for generating misra compliance report.")]
+        public String GRP { get; set; }
 
         protected override String GetPreOptionsLine()
         {
