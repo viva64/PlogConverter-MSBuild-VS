@@ -159,7 +159,7 @@ namespace ProgramVerificationSystems.PlogConverter
                     return GetRenderService<SarifRenderer>(renderType, completedAction);
                 case LogRenderType.JSON:
                     return GetRenderService<PlogJsonRenderer>(renderType, completedAction);
-                case LogRenderType.Misra:
+                case LogRenderType.MisraCompliance:
                     return GetRenderService<MisraComplianceRenderer>(renderType, completedAction);
                 default:
                     goto case LogRenderType.Html;
@@ -1599,7 +1599,7 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
                 if (Directory.Exists(defaultComplianceDir))
                     Directory.Delete(defaultComplianceDir, true);
 
-                string arguments = $" \"{jsonLog}\" -t misra -o \"{defaultComplianceDir.TrimEnd(new char[] { '\\', '/' })}\"";
+                string arguments = $" \"{jsonLog}\" -t misra_compliance -o \"{defaultComplianceDir.TrimEnd(new char[] { '\\', '/' })}\"";
 
                 if (!String.IsNullOrEmpty(RenderInfo.GRP))
                     arguments += $" --grp \"{RenderInfo.GRP}\"";

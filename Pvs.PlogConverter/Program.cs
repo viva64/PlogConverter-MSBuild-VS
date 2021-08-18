@@ -225,8 +225,8 @@ namespace ProgramVerificationSystems.PlogConverter
                 return false;
             }
 
-            if (!String.IsNullOrEmpty(parsedArgs.RenderInfo.GRP) && renderTypes.Any(e => e != LogRenderType.Misra))
-                Logger.Log("The use of the 'grp' flag is valid only for the 'misra' format. Otherwise, it will be ignored.");
+            if (!String.IsNullOrEmpty(parsedArgs.RenderInfo.GRP) && renderTypes.Any(e => e != LogRenderType.MisraCompliance))
+                Logger.Log("The use of the 'grp' flag is valid only for the 'MisraCompliance' format. Otherwise, it will be ignored.");
 
             if (renderTypes.Count == 0)
                 parsedArgs.RenderInfo.AllLogRenderType = true;
