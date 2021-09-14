@@ -121,6 +121,13 @@ namespace ProgramVerificationSystems.PlogConverter
         [Option("grp", Required = false, DefaultValue = "", HelpText = "Path to txt file with Guideline Re-categorization Plan. Used only for generating misra compliance report.")]
         public String GRP { get; set; }
 
+        /// <summary>
+        ///     Path to Guideline Re-categorization Plan (GRP) file
+        /// </summary>
+        /// <example>--grp=c:\Users\Settings.xml</example>
+        [Option("misraDeviations", Required = false, DefaultValue = "", HelpText = "Defines a list of rules and directives to Deviations, i.e. \"Rule 1.1;Rule 2.1;Directive 1.2\"")]
+        public String MisraDevistions { get; set; }
+
         protected override String GetPreOptionsLine()
         {
             return string.Format("{0}PlogConverter.exe [options] [log path(s)]", Environment.NewLine);

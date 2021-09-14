@@ -1604,6 +1604,9 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
                 if (!String.IsNullOrEmpty(RenderInfo.GRP))
                     arguments += $" --grp \"{RenderInfo.GRP}\"";
 
+                if (!String.IsNullOrEmpty(RenderInfo.MisraDeviations))
+                    arguments += $" --misra_deviations \"{RenderInfo.MisraDeviations}\"";
+ 
                 return (arguments, defaultComplianceDir);
             }
         }
@@ -1631,6 +1634,7 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
         public string SrcRoot { get; set; }
         public TransformationMode TransformationMode { get; set; }
         public string GRP { get; set; } = String.Empty;
+        public string MisraDeviations { get; set; } = String.Empty;
         public bool AllLogRenderType { get; set; } = false;
     }
 

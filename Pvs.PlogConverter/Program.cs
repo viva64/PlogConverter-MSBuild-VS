@@ -143,6 +143,7 @@ namespace ProgramVerificationSystems.PlogConverter
 
             parsedArgs.RenderInfo.OutputDir = converterOptions.OutputPath ?? DefaultOutputFolder;
             parsedArgs.RenderInfo.GRP = converterOptions.GRP;
+            parsedArgs.RenderInfo.MisraDeviations = converterOptions.MisraDevistions;
 
             if (!Directory.Exists(parsedArgs.RenderInfo.OutputDir))
             {
@@ -225,8 +226,15 @@ namespace ProgramVerificationSystems.PlogConverter
                 return false;
             }
 
-            if (!String.IsNullOrEmpty(parsedArgs.RenderInfo.GRP) && renderTypes.Any(e => e != LogRenderType.MisraCompliance))
-                Logger.Log("The use of the 'grp' flag is valid only for the 'MisraCompliance' format. Otherwise, it will be ignored.");
+            if (renderTypes.Any(e => e != LogRenderType.MisraCompliance))
+            {
+                if (!String.IsNullOrEmpty(parsedArgs.RenderInfo.GRP))
+                    Logger.Log("The use of the 'grp' flag is valid only for the 'MisraCompliance' format. Otherwise, it will be ignored.");
+
+                if (!String.IsNullOrEmpty(parsedArgs.RenderInfo.MisraDeviations))
+                    Logger.Log("The use of the 'misraDeviations' flag is valid only for the 'MisraCompliance' format. Otherwise, it will be ignored.");
+            }
+
 
             if (renderTypes.Count == 0)
                 parsedArgs.RenderInfo.AllLogRenderType = true;
