@@ -523,11 +523,16 @@ namespace ProgramVerificationSystems.PlogConverter
         public static IEnumerable<ErrorInfoAdapter> Filter(this IEnumerable<ErrorInfoAdapter> errors,
             IDictionary<AnalyzerType, ISet<uint>> analyzerLevelMap)
         {
-            return
-                errors.GroupByAnalyzerType()
+            var transformedErrors = errors.GroupByAnalyzerType()
                     .FilterByAnalyzerTypes(analyzerLevelMap.Keys.ToArray())
                     .FilterByLevels(analyzerLevelMap)
                     .Transform();
+
+            var renewMessage = errors.FirstOrDefault(e => e.ErrorInfo.AnalyzerType == AnalyzerType.Unknown && e.ErrorInfo.ErrorCode.Equals(ErrorInfo.RenewLicenseMessageCode));
+            if (renewMessage != null)
+                transformedErrors.Add(renewMessage);
+
+            return transformedErrors;
         }
 
         private static List<ErrorInfoAdapter> Transform(
