@@ -41,14 +41,37 @@ namespace ProgramVerificationSystems.PlogConverter
 
         private static readonly Comparison<ErrorInfoAdapter> DefaultSortStrategy = (first, second) =>
         {
-            var anComp = first.ErrorInfo.AnalyzerType.CompareTo(second.ErrorInfo.AnalyzerType);
-            var levelComp = first.ErrorInfo.Level.CompareTo(second.ErrorInfo.Level);
-            return anComp != 0
-                ? anComp
-                : (levelComp != 0
-                    ? levelComp
-                    : string.Compare(first.ErrorInfo.FileName, second.ErrorInfo.FileName,
-                        StringComparison.InvariantCultureIgnoreCase));
+            var firstErrorInfo = first.ErrorInfo;
+            var secondErrorInfo = second.ErrorInfo;
+
+            int comparsionResult = firstErrorInfo.AnalyzerType.CompareTo(secondErrorInfo.AnalyzerType);
+            if (comparsionResult != 0)
+                return comparsionResult;
+
+            String projectNameSeparator = DataTableUtils.ProjectNameSeparator.ToString();
+            comparsionResult = string.Compare(String.Join(projectNameSeparator, firstErrorInfo.ProjectNames),
+                                              String.Join(projectNameSeparator, secondErrorInfo.ProjectNames),
+                                              StringComparison.InvariantCulture);
+            if (comparsionResult != 0)
+                return comparsionResult;
+
+            comparsionResult = string.Compare(firstErrorInfo.FileName, secondErrorInfo.FileName, EnvironmentUtils.OSDependentPathComparisonOption);
+            if (comparsionResult != 0)
+                return comparsionResult;
+
+            comparsionResult = firstErrorInfo.Level.CompareTo(secondErrorInfo.Level);
+            if (comparsionResult != 0)
+                return comparsionResult;
+
+            comparsionResult = string.Compare(firstErrorInfo.ErrorCode, secondErrorInfo.ErrorCode, StringComparison.InvariantCulture);
+            if (comparsionResult != 0)
+                return comparsionResult;
+
+            comparsionResult = firstErrorInfo.LineNumber.CompareTo(secondErrorInfo.LineNumber);
+            if (comparsionResult != 0)
+                return comparsionResult;
+
+            return string.Compare(firstErrorInfo.Message, secondErrorInfo.Message, StringComparison.InvariantCulture);
         };
 
         public PlogRenderFactory(ParsedArguments parsedArguments, ILogger logger = null)
@@ -59,6 +82,7 @@ namespace ProgramVerificationSystems.PlogConverter
                 _settings = LoadSettings(parsedArguments.SettingsPath);
 
             var errorsSet = new HashSet<ErrorInfoAdapter>();
+            
             foreach (var plog in _parsedArgs.RenderInfo.Logs)
             {
                 string solutionPath;
@@ -82,10 +106,45 @@ namespace ProgramVerificationSystems.PlogConverter
             _errors = Utils.FilterErrors(_errors, _parsedArgs.LevelMap, allDisabledErrors)
                            .FixTrialMessages()
                            .ToList();
-            _errors.Sort(DefaultSortStrategy);
+
+            OrderErrors(_errors, _parsedArgs.RenderInfo.SrcRoot);
+
+
+        /*    String testLog = _parsedArgs.RenderInfo.Logs[0];
+
+            DataSet errors = ReadPlog(testLog);
+
+            var messageTable = errors.Tables[DataTableNames.MessageTableName];
+            messageTable.Clear();
+
+            var errorInfo = new ErrorInfo()
+            {
+                ErrorCode = "V001",
+                FileName = @"D:\SelfTester\src\QtParts\source\gradients.cpp",
+                LineNumber = 123,
+
+            };
+
+            var random = new Random(Guid.NewGuid().GetHashCode());
+            for (int i = 1600000; i > 0; i--)
+            {
+                var temp = errorInfo.Clone();
+                temp.Message = "TEst__" + i;
+                DataTableUtils.AppendErrorInfoToDataTable(messageTable, temp);
+            }
+
+            errors.WriteXml(@"D:\TEst_VERY_BIG_REPORT\test.plog", XmlWriteMode.WriteSchema);*/
         }
 
-        public PlogRenderFactory(ParsedArguments parsedArguments,  IEnumerable<ErrorInfoAdapter> errors, ILogger logger = null)
+        static public object[] GetPrimaryKey(ErrorInfo ei)
+        {
+            return new object[] { ei.LineNumber,
+                                  ei.Message,
+                                  ei.FileName,
+                                  ei.ErrorCode };
+        }
+
+        public PlogRenderFactory(ParsedArguments parsedArguments, IEnumerable<ErrorInfoAdapter> errors, ILogger logger = null)
         {
             _parsedArgs = parsedArguments;
             _parsedArgs.RenderInfo.SrcRoot = _parsedArgs.RenderInfo.SrcRoot.Trim('"').TrimEnd('\\');
@@ -95,7 +154,7 @@ namespace ProgramVerificationSystems.PlogConverter
                 _settings = LoadSettings(parsedArguments.SettingsPath);
 
             IEnumerable<string> allDisabledErrors = null;
-                        
+
             if ((_parsedArgs.DisabledErrorCodes != null && _parsedArgs.DisabledErrorCodes.Count > 0) ||
                 (_settings != null && !String.IsNullOrWhiteSpace(_settings.DisableDetectableErrors)))
                 allDisabledErrors = Enumerable.Union(_parsedArgs.DisabledErrorCodes ?? new List<String>(),
@@ -108,7 +167,14 @@ namespace ProgramVerificationSystems.PlogConverter
                            .FixTrialMessages()
                            .ToList();
 
-            _errors.Sort(DefaultSortStrategy);
+            OrderErrors(_errors, _parsedArgs.RenderInfo.SrcRoot);
+        }
+
+        private static void OrderErrors(List<ErrorInfoAdapter> errors, String sourceTreeRoot)
+        {
+            //SortAnalyzedSourceFiles(errors, sourceTreeRoot);
+            SortProjectNames(errors);
+            errors.Sort(DefaultSortStrategy);
         }
 
         public static ApplicationSettings LoadSettings(String settingsPath)
@@ -188,6 +254,23 @@ namespace ProgramVerificationSystems.PlogConverter
             }
         }
 
+        private static void SortAnalyzedSourceFiles(IEnumerable<ErrorInfoAdapter> errorInfoAdapters, String sourceTreeRoot)
+        {
+            foreach (var errorInfoAdapter in errorInfoAdapters)
+            {
+                errorInfoAdapter.ErrorInfo.AnalyzedSourceFiles
+                                          .OrderBy(e => Path.GetFileNameWithoutExtension(PlogRenderUtils.ConvertPath(e, sourceTreeRoot, TransformationMode.toRelative)))
+                                          .ThenBy(e => e)
+                                          .ToList();
+            }
+        }
+
+        private static void SortProjectNames(IEnumerable<ErrorInfoAdapter> errorInfoAdapters)
+        {
+            foreach (var errorInfoAdapter in errorInfoAdapters)
+                errorInfoAdapter.ErrorInfo.ProjectNames.Sort();
+        }
+
         #region Implementation for CSV Output
 
         private class CsvRenderer : IPlogRenderer
@@ -236,7 +319,6 @@ namespace ProgramVerificationSystems.PlogConverter
                         var headerRow = new CsvRow()
                         {
                             "FavIcon",
-                            "Default order",
                             "Level",
                             "Error code"
                         };
@@ -267,7 +349,6 @@ namespace ProgramVerificationSystems.PlogConverter
                             var messageRow = new CsvRow()
                             {
                                 error.FavIcon.ToString(),
-                                error.DefaultOrder.ToString(),
                                 error.ErrorInfo.Level.ToString(),
                                 error.ErrorInfo.ErrorCode
                             };
@@ -286,7 +367,8 @@ namespace ProgramVerificationSystems.PlogConverter
                                 error.ErrorInfo.FalseAlarmMark.ToString(),
                                 PlogRenderUtils.ConvertPath(error.ErrorInfo.FileName, RenderInfo.SrcRoot, RenderInfo.TransformationMode),
                                 error.ErrorInfo.AnalyzerType.ToString(),
-                                string.Join("|", error.ErrorInfo.AnalyzedSourceFiles.Select(x => !string.IsNullOrWhiteSpace(x) ? Path.GetFileName(x.Replace(ApplicationSettings.SourceTreeRootMarker, RenderInfo.SrcRoot.Trim('"').TrimEnd('\\'))) : x))
+                                string.Join("|", error.ErrorInfo.AnalyzedSourceFiles.Select(x => !string.IsNullOrWhiteSpace(x) ? Path.GetFileName(x.Replace(ApplicationSettings.SourceTreeRootMarker, RenderInfo.SrcRoot.Trim('"').TrimEnd('\\'))) 
+                                                                                                                               : x))
                             });
 
                             csvWriter.WriteRow(messageRow);
