@@ -107,33 +107,7 @@ namespace ProgramVerificationSystems.PlogConverter
                            .FixTrialMessages()
                            .ToList();
 
-            OrderErrors(_errors, _parsedArgs.RenderInfo.SrcRoot);
-
-
-        /*    String testLog = _parsedArgs.RenderInfo.Logs[0];
-
-            DataSet errors = ReadPlog(testLog);
-
-            var messageTable = errors.Tables[DataTableNames.MessageTableName];
-            messageTable.Clear();
-
-            var errorInfo = new ErrorInfo()
-            {
-                ErrorCode = "V001",
-                FileName = @"D:\SelfTester\src\QtParts\source\gradients.cpp",
-                LineNumber = 123,
-
-            };
-
-            var random = new Random(Guid.NewGuid().GetHashCode());
-            for (int i = 1600000; i > 0; i--)
-            {
-                var temp = errorInfo.Clone();
-                temp.Message = "TEst__" + i;
-                DataTableUtils.AppendErrorInfoToDataTable(messageTable, temp);
-            }
-
-            errors.WriteXml(@"D:\TEst_VERY_BIG_REPORT\test.plog", XmlWriteMode.WriteSchema);*/
+            OrderErrors(_errors, _parsedArgs.RenderInfo.SrcRoot, _parsedArgs.RenderInfo.TransformationMode);
         }
 
         static public object[] GetPrimaryKey(ErrorInfo ei)
@@ -167,12 +141,12 @@ namespace ProgramVerificationSystems.PlogConverter
                            .FixTrialMessages()
                            .ToList();
 
-            OrderErrors(_errors, _parsedArgs.RenderInfo.SrcRoot);
+            OrderErrors(_errors, _parsedArgs.RenderInfo.SrcRoot, _parsedArgs.RenderInfo.TransformationMode);
         }
 
-        private static void OrderErrors(List<ErrorInfoAdapter> errors, String sourceTreeRoot)
+        private static void OrderErrors(List<ErrorInfoAdapter> errors, String sourceTreeRoot, TransformationMode transformationMode)
         {
-            //SortAnalyzedSourceFiles(errors, sourceTreeRoot);
+            SortAnalyzedSourceFiles(errors, sourceTreeRoot, transformationMode);
             SortProjectNames(errors);
             errors.Sort(DefaultSortStrategy);
         }
@@ -254,13 +228,13 @@ namespace ProgramVerificationSystems.PlogConverter
             }
         }
 
-        private static void SortAnalyzedSourceFiles(IEnumerable<ErrorInfoAdapter> errorInfoAdapters, String sourceTreeRoot)
+        private static void SortAnalyzedSourceFiles(IEnumerable<ErrorInfoAdapter> errorInfoAdapters, String sourceTreeRoot, TransformationMode transformationMode)
         {
             foreach (var errorInfoAdapter in errorInfoAdapters)
             {
                 errorInfoAdapter.ErrorInfo.AnalyzedSourceFiles
-                                          .OrderBy(e => Path.GetFileNameWithoutExtension(PlogRenderUtils.ConvertPath(e, sourceTreeRoot, TransformationMode.toRelative)))
-                                          .ThenBy(e => e)
+                                          .Select(e => PlogRenderUtils.ConvertPath(e, sourceTreeRoot, transformationMode))
+                                          .OrderBy(e => e)
                                           .ToList();
             }
         }
