@@ -1,6 +1,6 @@
 //  2006-2008 (c) Viva64.com Team
 //  2008-2020 (c) OOO "Program Verification Systems"
-//  2020-2021 (c) PVS-Studio LLC
+//  2020-2022 (c) PVS-Studio LLC
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -12,7 +12,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("PVS-Studio LLC")]
 [assembly: AssemblyProduct("PVS-Studio")]
-[assembly: AssemblyCopyright("Copyright (c) 2021 PVS-Studio LLC")]
+[assembly: AssemblyCopyright("Copyright (c) 2022 PVS-Studio LLC")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
