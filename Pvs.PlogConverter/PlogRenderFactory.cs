@@ -196,6 +196,7 @@ namespace ProgramVerificationSystems.PlogConverter
                 case LogRenderType.TeamCity:
                     return GetRenderService<TeamCityPlogRenderer>(renderType, completedAction);
                 case LogRenderType.Sarif:
+                case LogRenderType.SarifVSCode:
                     return GetRenderService<SarifRenderer>(renderType, completedAction);
                 case LogRenderType.JSON:
                     return GetRenderService<PlogJsonRenderer>(renderType, completedAction);
@@ -1550,18 +1551,22 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
 
         private sealed class SarifRenderer : BaseHtmlGeneratorRender
         {
+            private bool IsForVSCode { get; set; }
+
             public SarifRenderer(RenderInfo renderInfo, IEnumerable<ErrorInfoAdapter> errors, IEnumerable<ErrorCodeMapping> errorCodeMappings,
                                    string outputNameTemplate, LogRenderType renderType, ILogger logger = null) 
                 : base(renderInfo, errors, errorCodeMappings, outputNameTemplate, renderType, logger)
             {
+                IsForVSCode = renderType == LogRenderType.SarifVSCode;
             }
- 
+
             protected override (string, string) GetGenerateData(string jsonLog)
             {
                 var logName = !string.IsNullOrWhiteSpace(OutputNameTemplate) ? OutputNameTemplate : (RenderInfo.Logs.Count == 1 ? Path.GetFileName(RenderInfo.Logs.First()) : "MergedReport");
                 var fileName = Path.Combine(RenderInfo.OutputDir, $"{logName}{LogExtension}").TrimEnd(new char[] { '\\', '/' });
                 var sourceRoot = RenderInfo.SrcRoot.TrimEnd(new char[] { '\\', '/' });
-                string arguments = $" \"{jsonLog}\" -t sarif -o \"{fileName}\" -r \"{sourceRoot}\" -a \"GA;64;OP;CS;MISRA;AUTOSAR;OWASP\"";
+                var outputMode = IsForVSCode ? "sarif-vscode" : "sarif";
+                string arguments = $" \"{jsonLog}\" -t {outputMode} -o \"{fileName}\" -r \"{sourceRoot}\" -a \"GA;64;OP;CS;MISRA;AUTOSAR;OWASP\"";
                 foreach (var security in ErrorCodeMappings)
                     arguments += " -m " + security.ToString().ToLower();
 
