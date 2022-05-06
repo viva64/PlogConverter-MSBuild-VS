@@ -7,8 +7,8 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Analyzer xml (.plog) log conversion tool")]
-[assembly: AssemblyDescription("Plog's converter for various output formats")]
+[assembly: AssemblyTitle("PVS-Studio Log Conversion Tool")]
+[assembly: AssemblyDescription("PVS-Studio Log Conversion Tool")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("PVS-Studio LLC")]
 [assembly: AssemblyProduct("PVS-Studio")]
