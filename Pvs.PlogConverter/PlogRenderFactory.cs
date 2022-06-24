@@ -108,6 +108,11 @@ namespace ProgramVerificationSystems.PlogConverter
                            .ToList();
 
             OrderErrors(_errors, _parsedArgs.RenderInfo.SrcRoot, _parsedArgs.RenderInfo.TransformationMode);
+
+            if (!_parsedArgs.RenderInfo.NoHelp)
+            {
+                _errors.Insert(0, GetDocumentationLinkMessage());
+            }
         }
 
         static public object[] GetPrimaryKey(ErrorInfo ei)
@@ -142,6 +147,11 @@ namespace ProgramVerificationSystems.PlogConverter
                            .ToList();
 
             OrderErrors(_errors, _parsedArgs.RenderInfo.SrcRoot, _parsedArgs.RenderInfo.TransformationMode);
+
+            if (!_parsedArgs.RenderInfo.NoHelp)
+            {
+                _errors.Insert(0, GetDocumentationLinkMessage());
+            }
         }
 
         private static void OrderErrors(List<ErrorInfoAdapter> errors, String sourceTreeRoot, TransformationMode transformationMode)
@@ -149,6 +159,26 @@ namespace ProgramVerificationSystems.PlogConverter
             SortAnalyzedSourceFiles(errors, sourceTreeRoot, transformationMode);
             SortProjectNames(errors);
             errors.Sort(DefaultSortStrategy);
+        }
+
+        private const String HelpErrorCode = "Help:";
+
+        static public bool IsHelpErrorCode(ErrorInfo err)
+        {
+            return err.ErrorCode == HelpErrorCode;
+        }
+
+        static private ErrorInfoAdapter GetDocumentationLinkMessage()
+        {
+            var docMessage = new ErrorInfo();
+
+            docMessage.ErrorCode = HelpErrorCode;
+            docMessage.Level = 1;
+            docMessage.FileName = "pvs-studio.com/en/docs/warnings/";
+            docMessage.LineNumber = 1;
+            docMessage.Message = "The documentation for all analyzer warnings is available here: https://pvs-studio.com/en/docs/warnings/.";
+
+            return new ErrorInfoAdapter(docMessage);
         }
 
         public static ApplicationSettings LoadSettings(String settingsPath)
@@ -185,7 +215,7 @@ namespace ProgramVerificationSystems.PlogConverter
                     return GetRenderService<PlogTotalsRenderer>(renderType, completedAction);
                 case LogRenderType.Html:
                     return GetRenderService<HtmlPlogRenderer>(renderType, completedAction);
-                case LogRenderType.Tasks:
+                case LogRenderType.TaskList:
                     return GetRenderService<TaskListRenderer>(renderType, completedAction);
                 case LogRenderType.FullHtml:
                     return GetRenderService<FullHtmlRenderer>(renderType, completedAction);
@@ -209,9 +239,14 @@ namespace ProgramVerificationSystems.PlogConverter
 
         public static void SaveErrorsToJsonFile(IEnumerable<ErrorInfoAdapter> errors, string jsonLogPath)
         {
-            JsonPvsReport jsonReport = new JsonPvsReport();
-            jsonReport.AddRange(errors.Select(item => item.ErrorInfo));
-            File.WriteAllText(jsonLogPath, JsonConvert.SerializeObject(jsonReport, Newtonsoft.Json.Formatting.Indented), Encoding.UTF8);
+            var jsonReport = new JsonPvsReport();
+            
+            jsonReport.AddRange(errors.Select(item => item.ErrorInfo)
+                                      .Where (item => !IsHelpErrorCode(item)));
+
+            File.WriteAllText(jsonLogPath, 
+                              JsonConvert.SerializeObject(jsonReport, Newtonsoft.Json.Formatting.Indented),
+                              Encoding.UTF8);
         }
 
 
@@ -817,7 +852,10 @@ namespace ProgramVerificationSystems.PlogConverter
                     var groupedErrorInfo = groupedErrorInfoMap[analyzerType];
                     foreach (var error in groupedErrorInfo)
                     {
-                        WriteTableRow(writer, error);
+                        if (!IsHelpErrorCode(error.ErrorInfo))
+                        {
+                            WriteTableRow(writer, error);
+                        }
                     }
                 }
             }
@@ -920,6 +958,7 @@ namespace ProgramVerificationSystems.PlogConverter
 
         #region Implementation for Summary Output
 
+        [SupportRelativePath]
         private sealed class PlogTotalsRenderer : IPlogRenderer
         {
             private const string MergedReportName = "MergedReport";
@@ -1379,6 +1418,7 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
 
         #region Implementation for Plog-to-Plog Output
 
+        [SupportRelativePath]
         private sealed class PlogToPlogRenderer : IPlogRenderer
         {
             private IList<String> _solutionPaths, _solutionVersions, _plogVersions;
@@ -1517,7 +1557,10 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
                     var allMessages = new DataTable();
 
                     DataTableUtils.CreatePVSDataTable(allMessages, solutionPathsTable, allMessages.DefaultView);
-                    var errorsInfo = Errors.ToList().ConvertAll((error) => error.ErrorInfo);
+                    
+                    var errorsInfo = Errors.Where(error => !IsHelpErrorCode(error.ErrorInfo))
+                                           .ToList().ConvertAll(error => error.ErrorInfo);
+
                     foreach (var errorInfo in errorsInfo)
                         DataTableUtils.AppendErrorInfoToDataTable(allMessages, errorInfo);
 
@@ -1578,6 +1621,7 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
 
         #region Implementation for JSON output
 
+        [SupportRelativePath]
         private sealed class PlogJsonRenderer : IPlogRenderer
         {
             private const string MergedReportName = "MergedReport";
@@ -1660,13 +1704,13 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
                 if (Directory.Exists(defaultComplianceDir))
                     Directory.Delete(defaultComplianceDir, true);
 
-                string arguments = $" \"{jsonLog}\" -t misra_compliance -o \"{defaultComplianceDir.TrimEnd(new char[] { '\\', '/' })}\"";
+                string arguments = $" \"{jsonLog}\" -t misra-compliance -o \"{defaultComplianceDir.TrimEnd(new char[] { '\\', '/' })}\"";
 
                 if (!String.IsNullOrEmpty(RenderInfo.GRP))
                     arguments += $" --grp \"{RenderInfo.GRP}\"";
 
                 if (!String.IsNullOrEmpty(RenderInfo.MisraDeviations))
-                    arguments += $" --misra_deviations \"{RenderInfo.MisraDeviations}\"";
+                    arguments += $" --misraDeviations \"{RenderInfo.MisraDeviations}\"";
  
                 return (arguments, defaultComplianceDir);
             }
@@ -1697,6 +1741,7 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
         public string GRP { get; set; } = String.Empty;
         public string MisraDeviations { get; set; } = String.Empty;
         public bool AllLogRenderType { get; set; } = false;
+        public bool NoHelp { get; set; } = false;
     }
 
     class PlogRenderUtils
@@ -1714,6 +1759,12 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
             else
             {
                 string relativePath = RemoveSourceRootMarker(PathUtils.TransformPathToRelative(file, srcRootDir));
+
+                if (relativePath == file)
+                {
+                    return relativePath;
+                }
+
                 return !relativePath.StartsWith(ApplicationSettings.SourceTreeRootMarker) && addMarker ? 
                     ApplicationSettings.SourceTreeRootMarker + Path.DirectorySeparatorChar + relativePath.Trim(Path.DirectorySeparatorChar) : relativePath;
             }

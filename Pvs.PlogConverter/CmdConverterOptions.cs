@@ -18,12 +18,14 @@ namespace ProgramVerificationSystems.PlogConverter
         Success = 0,
         [Description("Errors were encountered during generation of one of the output files;")]
         RenderException = 1,
-        [Description("Output contains non-suppressed warnings after filtration. This exit code will be generated only when using converter with --indicate-warnings (-w) flag;")]
+        [Description("Output contains non-suppressed warnings after filtration. This exit code will be generated only when using converter with --indicateWarnings (-w) flag;")]
         OutputLogNotEmpty = 2,
         [Description("General (nonspecific) error in the converter's operation, a possible handled exception;")]
         GeneralException = 3,
         [Description("Some of the command line arguments passed to the tool were incorrect;")]
         IncorrectArguments = 4,
+        [Description("Some of the formats doesn't support transformation to relative root")]
+        UnsupportedPathTransofrmation = 5
     }
 
     /// <summary>
@@ -53,7 +55,7 @@ namespace ProgramVerificationSystems.PlogConverter
             + "Transforms relative paths from input logs (starting with |?| marker) to absolute paths in output logs.")]
         public string SrcRoot { get; set; }
 
-        [Option('R', "pathTransformationMode", Required = false, DefaultValue = TransformationMode.toAbsolute, HelpText = "Trasformation mode: toAbsolute - transfort to absolute path, " +
+        [Option('R', "pathTransformationMode", Required = false, DefaultValue = TransformationMode.toAbsolute, HelpText = "Trasformation mode: toAbsolute - transform to absolute path, " +
             "toRelative - transform to relative with source root (--srcRoot option).")]
         public TransformationMode TransformationMode { get; set; }
 
@@ -73,7 +75,7 @@ namespace ProgramVerificationSystems.PlogConverter
         /// </summary>
         /// <example>--renderTypes=Html,Totals,Txt,Csv,Plog</example>
         [OptionList('t', "renderTypes", Separator = ',', Required = false,
-            HelpText = "Render types for output. Supported renderers: Html,FullHtml,Totals,Txt,Csv,Tasks,Plog,TeamCity,Sarif,SarifVSCode,JSON,MisraCompliance")]
+            HelpText = "Render types for output. Supported renderers: Html,FullHtml,Totals,Txt,Csv,Tasklist,Plog,TeamCity,Sarif,SarifVSCode,JSON,MisraCompliance")]
         public IList<string> PlogRenderTypes { get; set; }
 
         /// <summary>
@@ -108,9 +110,17 @@ namespace ProgramVerificationSystems.PlogConverter
 
         /// <summary>
         ///     Set this option to detect the presense of warnings in output log file
+        ///     (Depricated) This flag is alias to 'indicateWarnings' one.
         /// </summary>
         /// <example>--outputNameTemplate=your_output_log_name</example>
-        [Option('w', "indicate-warnings", Required = false,
+        [Option("indicate-warnings", Required = false, HelpText = InternalHelpText)]
+        public bool IndicateWarningsDeprecated { get; set; }
+
+        /// <summary>
+        ///     Set this option to detect the presense of warnings in output log file
+        /// </summary>
+        /// <example>--outputNameTemplate=your_output_log_name</example>
+        [Option('w', "indicateWarnings", Required = false,
             HelpText = "Set this option to detect the presense of analyzer warnings after filtering analysis log by setting the converter exit code to '2'.")]
         public bool IndicateWarnings { get; set; }
 
@@ -126,7 +136,14 @@ namespace ProgramVerificationSystems.PlogConverter
         /// </summary>
         /// <example>--grp=c:\Users\Settings.xml</example>
         [Option("misraDeviations", Required = false, DefaultValue = "", HelpText = "Defines a list of rules and directives to Deviations, i.e. \"Rule 1.1;Rule 2.1;Directive 1.2\"")]
-        public String MisraDevistions { get; set; }
+        public String MisraDeviations { get; set; }
+
+        /// <summary>
+        ///     Path to Guideline Re-categorization Plan (GRP) file
+        /// </summary>
+        /// <example>--grp=c:\Users\Settings.xml</example>
+        [Option("noHelpMessages", Required = false, DefaultValue = false, HelpText = "Do not display documentation messages in warnings output.")]
+        public bool NoHelp { get; set; }
 
         protected override String GetPreOptionsLine()
         {

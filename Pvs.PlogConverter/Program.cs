@@ -58,12 +58,22 @@ namespace ProgramVerificationSystems.PlogConverter
                     var closureIndex = index;
                     renderTasks[index] =
                         Task.Factory.StartNew(() =>
-                        { 
-                             var plogRenderer = renderFactory.GetRenderService(acceptedRenderTypes[closureIndex],
-                             (renderType, path) =>
+                        {
+                             var renderType = acceptedRenderTypes[closureIndex];
+                             var plogRenderer = renderFactory.GetRenderService(renderType,
+                             (rt, path) =>
                                 DefaultWriter.WriteLine("{0} output was saved to {1}",
-                                                        Enum.GetName(typeof(LogRenderType), renderType),
+                                                        Enum.GetName(typeof(LogRenderType), rt),
                                                         path));
+                             
+                             if (  !plogRenderer.IsSupportRenderType() 
+                                 && parsedArgs.RenderInfo.TransformationMode == TransformationMode.toRelative)
+                             {
+                                DefaultWriter.WriteLine("Error: the \'{0}\' format doesn't support relative root",
+                                                        Enum.GetName(typeof(LogRenderType), renderType));
+                                renderFactory.Logger.ErrorCode = (int)ConverterRunState.UnsupportedPathTransofrmation;
+                                return;
+                             }
 
                              filteredErrorsByRenderTypes.Add(plogRenderer.Errors.Count());
                              plogRenderer.Render();
@@ -72,14 +82,24 @@ namespace ProgramVerificationSystems.PlogConverter
 
                 Task.WaitAll(renderTasks);
 
-                if (renderFactory.Logger != null && renderFactory.Logger.ErrorCode != 0)
+                var rc = renderFactory.Logger.ErrorCode;
+                if (rc == (int)ConverterRunState.UnsupportedPathTransofrmation)
+                {
+                    return rc;
+                }
+
+                if (renderFactory.Logger != null && rc != 0)
                 {
                     return (int)ConverterRunState.RenderException;
                 }
-                
-                return (int)((   parsedArgs.IndicateWarnings
-                              && filteredErrorsByRenderTypes.Any(errorsByRenderType => errorsByRenderType != 0)) ? ConverterRunState.OutputLogNotEmpty 
-                                                                                                                 : ConverterRunState.Success);
+
+                if (   parsedArgs.IndicateWarnings
+                    && filteredErrorsByRenderTypes.Any(errorsByRenderType => errorsByRenderType != 0))
+                {
+                    return (int)ConverterRunState.OutputLogNotEmpty;
+                }
+
+                return (int)ConverterRunState.Success;
             }
             catch (AggregateException aggrEx)
             {
@@ -143,7 +163,8 @@ namespace ProgramVerificationSystems.PlogConverter
 
             parsedArgs.RenderInfo.OutputDir = converterOptions.OutputPath ?? DefaultOutputFolder;
             parsedArgs.RenderInfo.GRP = converterOptions.GRP;
-            parsedArgs.RenderInfo.MisraDeviations = converterOptions.MisraDevistions;
+            parsedArgs.RenderInfo.MisraDeviations = converterOptions.MisraDeviations;
+            parsedArgs.RenderInfo.NoHelp = converterOptions.NoHelp;
 
             if (!Directory.Exists(parsedArgs.RenderInfo.OutputDir))
             {
@@ -244,7 +265,7 @@ namespace ProgramVerificationSystems.PlogConverter
             parsedArgs.DisabledErrorCodes = converterOptions.DisabledErrorCodes;
             parsedArgs.SettingsPath = converterOptions.SettingsPath;
             parsedArgs.OutputNameTemplate = converterOptions.OutputNameTemplate;
-            parsedArgs.IndicateWarnings = converterOptions.IndicateWarnings;
+            parsedArgs.IndicateWarnings = converterOptions.IndicateWarnings || converterOptions.IndicateWarningsDeprecated;
 
             errorMessage = string.Empty;
             return true;
