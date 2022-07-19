@@ -1401,12 +1401,12 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
             {
                 string defaultFullHtmlDir = Path.Combine(RenderInfo.OutputDir, "fullhtml");
                 if (!string.IsNullOrEmpty(OutputNameTemplate))
-                    defaultFullHtmlDir = Path.Combine(RenderInfo.OutputDir, OutputNameTemplate);
+                    defaultFullHtmlDir = Path.Combine(RenderInfo.OutputDir, OutputNameTemplate + ".fullhtml");
 
                 if (Directory.Exists(defaultFullHtmlDir))
                     Directory.Delete(defaultFullHtmlDir, true);
 
-                string arguments = $" \"{jsonLog}\" -t fullhtml -o \"{Path.Combine(RenderInfo.OutputDir, OutputNameTemplate).TrimEnd(new char[] { '\\', '/' })}\" -r \"{RenderInfo.SrcRoot.TrimEnd(new char[] { '\\', '/' })}\" -a \"GA;64;OP;CS;MISRA;AUTOSAR;OWASP\"";
+                string arguments = $" \"{jsonLog}\" -t fullhtml -o \"{defaultFullHtmlDir}\" -r \"{RenderInfo.SrcRoot.TrimEnd(new char[] { '\\', '/' })}\" -a \"GA;64;OP;CS;MISRA;AUTOSAR;OWASP\"";
                 foreach (var security in ErrorCodeMappings)
                     arguments += " -m " + security.ToString().ToLower();
 
@@ -1414,7 +1414,7 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
             }
         }
 
-         #endregion
+        #endregion
 
         #region Implementation for Plog-to-Plog Output
 
@@ -1693,14 +1693,14 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
                 {
                     if (RenderInfo.AllLogRenderType)
                     {
-                        defaultComplianceDir = Path.Combine(RenderInfo.OutputDir, $"{OutputNameTemplate}_misra");
+                        defaultComplianceDir = Path.Combine(RenderInfo.OutputDir, $"{OutputNameTemplate}.misra-compliance");
                     }
                     else
                     {
                         defaultComplianceDir = Path.Combine(RenderInfo.OutputDir, OutputNameTemplate);
                     }
                 }
-                    
+
                 if (Directory.Exists(defaultComplianceDir))
                     Directory.Delete(defaultComplianceDir, true);
 
