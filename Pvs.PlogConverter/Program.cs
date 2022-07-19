@@ -88,7 +88,7 @@ namespace ProgramVerificationSystems.PlogConverter
                     return rc;
                 }
 
-                if (renderFactory.Logger != null && rc != 0)
+                if (rc != 0)
                 {
                     return (int)ConverterRunState.RenderException;
                 }
