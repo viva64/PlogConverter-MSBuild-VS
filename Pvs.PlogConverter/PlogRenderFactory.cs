@@ -1680,39 +1680,34 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
         #region Implementation for Compliance output
         private sealed class MisraComplianceRenderer : BaseHtmlGeneratorRender
         {
-            public MisraComplianceRenderer(RenderInfo renderInfo, IEnumerable<ErrorInfoAdapter> errors, IEnumerable<ErrorCodeMapping> errorCodeMappings, 
-                                      string outputNameTemplate, LogRenderType renderType, ILogger logger = null)
+            public MisraComplianceRenderer(RenderInfo renderInfo, 
+                                           IEnumerable<ErrorInfoAdapter> errors, 
+                                           IEnumerable<ErrorCodeMapping> errorCodeMappings,
+                                           string outputNameTemplate, 
+                                           LogRenderType renderType, 
+                                           ILogger logger = null)
                 : base(renderInfo, errors, errorCodeMappings, outputNameTemplate, renderType, logger)
             {
             }
 
             protected override (string, string) GetGenerateData(string jsonLog)
             {
-                string defaultComplianceDir = Path.Combine(RenderInfo.OutputDir, "misracompliance");
-                if (!string.IsNullOrEmpty(OutputNameTemplate))
-                {
-                    if (RenderInfo.AllLogRenderType)
-                    {
-                        defaultComplianceDir = Path.Combine(RenderInfo.OutputDir, $"{OutputNameTemplate}.misra-compliance");
-                    }
-                    else
-                    {
-                        defaultComplianceDir = Path.Combine(RenderInfo.OutputDir, OutputNameTemplate);
-                    }
-                }
+                var logName = string.IsNullOrWhiteSpace(OutputNameTemplate)
+                            ? (RenderInfo.Logs.Count == 1 ? Path.GetFileName(RenderInfo.Logs.First())
+                                                          : "MergedReport")
+                            : OutputNameTemplate;
+                var fileName = Path.Combine(RenderInfo.OutputDir, $"{logName}{LogExtension}").TrimEnd(new char[] { '\\', '/' });
+                var sourceRoot = RenderInfo.SrcRoot.TrimEnd(new char[] { '\\', '/' });
 
-                if (Directory.Exists(defaultComplianceDir))
-                    Directory.Delete(defaultComplianceDir, true);
-
-                string arguments = $" \"{jsonLog}\" -t misra-compliance -o \"{defaultComplianceDir.TrimEnd(new char[] { '\\', '/' })}\"";
+                string arguments = $" \"{jsonLog}\" -t misra-compliance -o \"{fileName}\" -r \"{sourceRoot}\"";
 
                 if (!String.IsNullOrEmpty(RenderInfo.GRP))
                     arguments += $" --grp \"{RenderInfo.GRP}\"";
 
                 if (!String.IsNullOrEmpty(RenderInfo.MisraDeviations))
                     arguments += $" --misraDeviations \"{RenderInfo.MisraDeviations}\"";
- 
-                return (arguments, defaultComplianceDir);
+
+                return (arguments, fileName);
             }
         }
 
