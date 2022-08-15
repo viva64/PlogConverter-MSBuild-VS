@@ -108,11 +108,6 @@ namespace ProgramVerificationSystems.PlogConverter
                            .ToList();
 
             OrderErrors(_errors, _parsedArgs.RenderInfo.SrcRoot, _parsedArgs.RenderInfo.TransformationMode);
-
-            if (!_parsedArgs.RenderInfo.NoHelp)
-            {
-                _errors.Insert(0, GetDocumentationLinkMessage());
-            }
         }
 
         static public object[] GetPrimaryKey(ErrorInfo ei)
@@ -147,11 +142,6 @@ namespace ProgramVerificationSystems.PlogConverter
                            .ToList();
 
             OrderErrors(_errors, _parsedArgs.RenderInfo.SrcRoot, _parsedArgs.RenderInfo.TransformationMode);
-
-            if (!_parsedArgs.RenderInfo.NoHelp)
-            {
-                _errors.Insert(0, GetDocumentationLinkMessage());
-            }
         }
 
         private static void OrderErrors(List<ErrorInfoAdapter> errors, String sourceTreeRoot, TransformationMode transformationMode)
@@ -456,7 +446,13 @@ namespace ProgramVerificationSystems.PlogConverter
                     using (TextWriter tasksWriter = new StreamWriter(writer))
                     {
                         if (Errors != null && Errors.Any())
+                        {
+                            if (!RenderInfo.NoHelp)
+                            {
+                                Errors = Errors.InsertFront(GetDocumentationLinkMessage());
+                            }
                             WriteTaskList(tasksWriter);
+                        }
                         else
                             tasksWriter.WriteLine(String.Format("pvs-studio.com/en/docs/warnings\t1\terr\t{0}{1}", NoMessage, Environment.NewLine));
                         if (writer is FileStream)

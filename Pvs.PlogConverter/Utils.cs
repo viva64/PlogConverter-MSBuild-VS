@@ -216,6 +216,15 @@ namespace ProgramVerificationSystems.PlogConverter
             return errorInfoAdapters;
         }
 
+        public static IEnumerable<T> InsertFront<T>(this IEnumerable<T> e, T value)
+        {
+            yield return value;
+            foreach (var cur in e)
+            {
+                yield return cur;
+            }
+        }
+
         public static IEnumerable<ErrorInfoAdapter> FilterErrors(IEnumerable<ErrorInfoAdapter> errors, 
                                         IDictionary<AnalyzerType, ISet<uint>> levelMap,
                                         IEnumerable<string> disabledErrorCodes)
