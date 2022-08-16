@@ -1,4 +1,4 @@
-﻿//  2006-2008 (c) Viva64.com Team
+//  2006-2008 (c) Viva64.com Team
 //  2008-2020 (c) OOO "Program Verification Systems"
 //  2020-2022 (c) PVS-Studio LLC
 using System.Reflection;
@@ -31,5 +31,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("7.18.0.0")]
-[assembly: AssemblyFileVersion("7.18.0.0")]
+[assembly: AssemblyVersion("7.20.0.0")]
+[assembly: AssemblyFileVersion("7.20.0.0")]
