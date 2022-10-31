@@ -183,7 +183,10 @@ namespace ProgramVerificationSystems.PlogConverter
         private IPlogRenderer GetRenderService<T>(LogRenderType renderType, Action<LogRenderType, string> completedAction) where T : class, IPlogRenderer
         {
             var renderer = Activator.CreateInstance(typeof(T), new object[] { _parsedArgs.RenderInfo,
-                                                                              _errors.ExcludeFalseAlarms(renderType),
+                                                                              _errors.ExcludeFalseAlarms(renderType)
+                                                                                     .ExcludePaths(_parsedArgs.ExcludePaths, 
+                                                                                                    _parsedArgs.RenderInfo.SrcRoot, 
+                                                                                                    _parsedArgs.RenderInfo.TransformationMode),
                                                                               _parsedArgs.ErrorCodeMappings,
                                                                               _parsedArgs.OutputNameTemplate,
                                                                               renderType,
@@ -1744,6 +1747,7 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
         public ISet<LogRenderType> RenderTypes { get; set; }
         public IEnumerable<ErrorCodeMapping> ErrorCodeMappings { get; set; }
         public IList<string> DisabledErrorCodes { get; set; }
+        public IList<string> ExcludePaths { get; set; }
         public String SettingsPath { get; set; }
         public String OutputNameTemplate { get; set; }
         public Boolean IndicateWarnings { get; set; }

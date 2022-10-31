@@ -75,6 +75,12 @@ namespace ProgramVerificationSystems.PlogConverter
                                 return;
                              }
 
+                             if (!Utils.IsExcludePathsSupported)
+                             {
+                                DefaultWriter.WriteLine("Warning: Filtering by file is only available for paths without the SourceTreeRoot marker.\n" +
+                                                        "To filter by file for the report, specify the root directory via the '-r' flag. \n");
+                            }
+
                              filteredErrorsByRenderTypes.Add(plogRenderer.Errors.Count());
                              plogRenderer.Render();
                         });
@@ -200,6 +206,21 @@ namespace ProgramVerificationSystems.PlogConverter
             }
 
             parsedArgs.LevelMap = analyzerLevelFilterMap;
+
+            parsedArgs.ExcludePaths = new List<string>();
+            if (converterOptions.excludePaths != null && converterOptions.excludePaths.Count != 0)
+            {
+                foreach (string excludePath in converterOptions.excludePaths)
+                {
+                    string path = excludePath.Trim();
+
+                    if (!Utils.IsMask(path))
+                    {
+                        path = Path.GetFullPath(path);
+                    }                   
+                    parsedArgs.ExcludePaths.Add(path);
+                }
+            }
 
             // Getting render types
             ISet<LogRenderType> renderTypes = new HashSet<LogRenderType>();

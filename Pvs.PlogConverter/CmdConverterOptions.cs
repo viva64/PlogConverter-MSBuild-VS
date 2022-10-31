@@ -55,6 +55,14 @@ namespace ProgramVerificationSystems.PlogConverter
             + "Transforms relative paths from input logs (starting with |?| marker) to absolute paths in output logs.")]
         public string SrcRoot { get; set; }
 
+        /// <summary>
+        ///     Exclude path
+        /// </summary>
+        /// <example>--excludePaths=C:\deps*\*.cpp,C:\test\*.?pp</example>
+        [OptionList('e', "excludePaths", Required = false, HelpText = "Excludes from the report all warnings issued in certain files. " +
+            "                                                          Separate the paths or masks with the ';' character.", Separator=';')]
+        public IList<string> excludePaths { get; set; }
+
         [Option('R', "pathTransformationMode", Required = false, DefaultValue = TransformationMode.toAbsolute, HelpText = "Trasformation mode: toAbsolute - transform to absolute path, " +
             "toRelative - transform to relative with source root (--srcRoot option).")]
         public TransformationMode TransformationMode { get; set; }

@@ -30,6 +30,8 @@ namespace ProgramVerificationSystems.PlogConverter
         public readonly static string PlogExtension;
         public readonly static string JsonLogExtension;
 
+        public static bool IsExcludePathsSupported = true;
+
         static Utils()
         {
             PlogExtension = ReflectionUtils.GetAttributes<DescriptionAttribute, LogRenderType>(LogRenderType.Plog).First().Description;
@@ -45,6 +47,114 @@ namespace ProgramVerificationSystems.PlogConverter
             var descriptionAttributes =
                 (DescriptionAttribute[])memberInfos[0].GetCustomAttributes(typeof(DescriptionAttribute), false);
             return descriptionAttributes.Length == 1 ? descriptionAttributes[0].Description : string.Empty;
+        }
+
+        private static bool IsWindows()
+        {
+
+#if !OS_IDENTIFICATION_RUNTIME
+    #if LINUX || OSX
+            return  false;
+    #else
+            return true;
+    #endif
+#else
+            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+#endif
+        }
+
+        private static StringComparison _OSDependentPathComparisonOption = IsWindows() ? StringComparison.OrdinalIgnoreCase
+                                                                                       : StringComparison.Ordinal;
+
+        public static StringComparison PathComparisonOptions
+        {
+            get { return _OSDependentPathComparisonOption; }
+        }
+
+        public static bool IsMask(string path)
+        {
+            return path.Contains("*") || path.Contains("?");
+        }
+
+        public static bool PathMatchSpec(String path, String spec)
+        {
+            if (IsMask(spec))
+            {
+                String specAsRegex = Regex.Escape(spec)
+                                          .Replace(@"\*", ".*")
+                                          .Replace(@"\?", ".") + "$";
+
+                return Regex.IsMatch(path, specAsRegex);
+            }
+            return path.StartsWith(spec, PathComparisonOptions);
+        }
+
+        public static bool IsExcludePath(string srcPath, string excludePath, 
+                                         string sourceTreeRoot, TransformationMode transformationMode)
+        {
+            if (!IsExcludePathsSupported)
+                return false;
+
+            if (srcPath.StartsWith(SourceTreeRootMarker))
+            {
+                if (string.IsNullOrEmpty(sourceTreeRoot))
+                {
+                    IsExcludePathsSupported = false;
+                    return false;
+                }
+                srcPath = PlogRenderUtils.ConvertPath(srcPath, sourceTreeRoot, transformationMode);
+            }
+
+            string normalizedSrcPath = NormalizePath(srcPath);
+            string normalizedExcludePath = NormalizePath(excludePath);
+
+            if (String.IsNullOrWhiteSpace(normalizedSrcPath) || String.IsNullOrWhiteSpace(normalizedExcludePath))
+                return false;
+
+            return PathMatchSpec(normalizedSrcPath, normalizedExcludePath);
+        }
+
+        public static string NormalizePath(string path)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(path))
+                {
+                    return string.Empty;
+                }
+                string normalizedPath;
+
+                String directoryName = Path.GetDirectoryName(path);
+                String fileName = Path.GetFileName(path);
+                String extension = Path.GetExtension(path);
+
+                if (directoryName == null && String.IsNullOrEmpty(extension) && !String.IsNullOrEmpty(Path.GetPathRoot(path)))
+                {
+                    //the path is root drive, for example c:, c:\
+                    return Path.GetPathRoot(path);
+                }
+
+                if (!String.IsNullOrEmpty(directoryName))
+                {
+                    if ((directoryName.EndsWith("*") || directoryName.EndsWith("?")) && (String.IsNullOrEmpty(fileName)))
+                        //in case of directory mask
+                        normalizedPath = directoryName;
+                    else if (directoryName.Equals(Path.DirectorySeparatorChar.ToString()))
+                        //Empty directory, like /abcd
+                        normalizedPath = directoryName + fileName;
+                    else
+                        normalizedPath = directoryName.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar + fileName;
+                }
+                else
+                    normalizedPath = fileName;
+
+                return normalizedPath;
+            }
+            catch(Exception)
+            {
+                return string.Empty;
+            }
+
         }
 
         public static T[] GetEnumValues<T>()
@@ -490,6 +600,17 @@ namespace ProgramVerificationSystems.PlogConverter
                 return errors.ToList();
 
             return errors.Where(error => !error.ErrorInfo.FalseAlarmMark).ToList();
+        }
+
+        public static List<ErrorInfoAdapter> ExcludePaths(this IEnumerable<ErrorInfoAdapter> errors, 
+                                                          IEnumerable<string> excludePaths,
+                                                          string sourceTreeRoot,
+                                                          TransformationMode transformationMode)
+        {
+            var excludePathsArray = excludePaths as string[] ?? excludePaths.ToArray();
+            return errors.Where(error =>
+            !excludePathsArray.Any(excludePath => Utils.IsExcludePath(error.ErrorInfo.FileName, excludePath, sourceTreeRoot, transformationMode))
+            ).ToList();
         }
 
         public static List<ErrorInfoAdapter> FixTrialMessages(this IEnumerable<ErrorInfoAdapter> errors)
