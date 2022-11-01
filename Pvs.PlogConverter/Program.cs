@@ -75,11 +75,11 @@ namespace ProgramVerificationSystems.PlogConverter
                                 return;
                              }
 
-                             if (!Utils.IsExcludePathsSupported)
+                             if (!ExcludeUtils.IsExcludePathsSupported)
                              {
                                 DefaultWriter.WriteLine("Warning: Filtering by file is only available for paths without the SourceTreeRoot marker.\n" +
                                                         "To filter by file for the report, specify the root directory via the '-r' flag. \n");
-                            }
+                             }
 
                              filteredErrorsByRenderTypes.Add(plogRenderer.Errors.Count());
                              plogRenderer.Render();

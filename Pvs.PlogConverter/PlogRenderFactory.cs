@@ -1823,6 +1823,47 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
 
             return convertedPositions;
         }
+    }
 
+    static class ExcludeUtils
+    {
+        public static bool IsExcludePathsSupported = true;
+        public const string SourceTreeRootMarker = ApplicationSettings.SourceTreeRootMarker;
+
+        public static List<ErrorInfoAdapter> ExcludePaths(this IEnumerable<ErrorInfoAdapter> errors,
+                                                         IEnumerable<string> excludePaths,
+                                                         string sourceTreeRoot,
+                                                         TransformationMode transformationMode)
+        {
+            var excludePathsArray = excludePaths as string[] ?? excludePaths.ToArray();
+            return errors.Where(error =>
+            !excludePathsArray.Any(excludePath => ExcludeUtils.IsExcludePath(error.ErrorInfo.FileName, excludePath, sourceTreeRoot, transformationMode))
+            ).ToList();
+        }
+
+        public static bool IsExcludePath(string srcPath, string excludePath,
+                                        string sourceTreeRoot, TransformationMode transformationMode)
+        {
+            if (!IsExcludePathsSupported)
+                return false;
+
+            if (srcPath.StartsWith(SourceTreeRootMarker))
+            {
+                if (string.IsNullOrEmpty(sourceTreeRoot))
+                {
+                    IsExcludePathsSupported = false;
+                    return false;
+                }
+                srcPath = PlogRenderUtils.ConvertPath(srcPath, sourceTreeRoot, transformationMode);
+            }
+
+            string normalizedSrcPath = Utils.NormalizePath(srcPath);
+            string normalizedExcludePath = Utils.NormalizePath(excludePath);
+
+            if (String.IsNullOrWhiteSpace(normalizedSrcPath) || String.IsNullOrWhiteSpace(normalizedExcludePath))
+                return false;
+
+            return Utils.PathMatchSpec(normalizedSrcPath, normalizedExcludePath);
+        }
     }
 }

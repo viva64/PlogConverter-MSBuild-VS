@@ -25,12 +25,9 @@ namespace ProgramVerificationSystems.PlogConverter
     /// </summary>
     internal static class Utils
     {
-        public const string SourceTreeRootMarker = ApplicationSettings.SourceTreeRootMarker;
         private static readonly Encoding DefaultEncoding = Encoding.UTF8;
         public readonly static string PlogExtension;
         public readonly static string JsonLogExtension;
-
-        public static bool IsExcludePathsSupported = true;
 
         static Utils()
         {
@@ -87,31 +84,6 @@ namespace ProgramVerificationSystems.PlogConverter
                 return Regex.IsMatch(path, specAsRegex);
             }
             return path.StartsWith(spec, PathComparisonOptions);
-        }
-
-        public static bool IsExcludePath(string srcPath, string excludePath, 
-                                         string sourceTreeRoot, TransformationMode transformationMode)
-        {
-            if (!IsExcludePathsSupported)
-                return false;
-
-            if (srcPath.StartsWith(SourceTreeRootMarker))
-            {
-                if (string.IsNullOrEmpty(sourceTreeRoot))
-                {
-                    IsExcludePathsSupported = false;
-                    return false;
-                }
-                srcPath = PlogRenderUtils.ConvertPath(srcPath, sourceTreeRoot, transformationMode);
-            }
-
-            string normalizedSrcPath = NormalizePath(srcPath);
-            string normalizedExcludePath = NormalizePath(excludePath);
-
-            if (String.IsNullOrWhiteSpace(normalizedSrcPath) || String.IsNullOrWhiteSpace(normalizedExcludePath))
-                return false;
-
-            return PathMatchSpec(normalizedSrcPath, normalizedExcludePath);
         }
 
         public static string NormalizePath(string path)
@@ -600,17 +572,6 @@ namespace ProgramVerificationSystems.PlogConverter
                 return errors.ToList();
 
             return errors.Where(error => !error.ErrorInfo.FalseAlarmMark).ToList();
-        }
-
-        public static List<ErrorInfoAdapter> ExcludePaths(this IEnumerable<ErrorInfoAdapter> errors, 
-                                                          IEnumerable<string> excludePaths,
-                                                          string sourceTreeRoot,
-                                                          TransformationMode transformationMode)
-        {
-            var excludePathsArray = excludePaths as string[] ?? excludePaths.ToArray();
-            return errors.Where(error =>
-            !excludePathsArray.Any(excludePath => Utils.IsExcludePath(error.ErrorInfo.FileName, excludePath, sourceTreeRoot, transformationMode))
-            ).ToList();
         }
 
         public static List<ErrorInfoAdapter> FixTrialMessages(this IEnumerable<ErrorInfoAdapter> errors)
