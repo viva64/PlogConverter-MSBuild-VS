@@ -1834,6 +1834,11 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
                                                          string sourceTreeRoot,
                                                          TransformationMode transformationMode)
         {
+            if (excludePaths == null || excludePaths.Count() == 0)
+            {
+                return errors.ToList();
+            }
+
             var excludePathsArray = excludePaths as string[] ?? excludePaths.ToArray();
             return errors.Where(error =>
             !excludePathsArray.Any(excludePath => IsExcludePath(error.ErrorInfo.FileName, excludePath, sourceTreeRoot, transformationMode))
