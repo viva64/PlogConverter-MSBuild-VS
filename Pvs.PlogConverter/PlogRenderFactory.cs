@@ -184,9 +184,10 @@ namespace ProgramVerificationSystems.PlogConverter
         {
             var renderer = Activator.CreateInstance(typeof(T), new object[] { _parsedArgs.RenderInfo,
                                                                               _errors.ExcludeFalseAlarms(renderType)
-                                                                                     .ExcludePaths(_parsedArgs.ExcludePaths, 
-                                                                                                    _parsedArgs.RenderInfo.SrcRoot, 
-                                                                                                    _parsedArgs.RenderInfo.TransformationMode),
+                                                                                     .PathFilter(_parsedArgs.IncludePaths, 
+                                                                                                 _parsedArgs.ExcludePaths, 
+                                                                                                 _parsedArgs.RenderInfo.SrcRoot, 
+                                                                                                 _parsedArgs.RenderInfo.TransformationMode),
                                                                               _parsedArgs.ErrorCodeMappings,
                                                                               _parsedArgs.OutputNameTemplate,
                                                                               renderType,
@@ -1748,6 +1749,7 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
         public IEnumerable<ErrorCodeMapping> ErrorCodeMappings { get; set; }
         public IList<string> DisabledErrorCodes { get; set; }
         public IList<string> ExcludePaths { get; set; }
+        public IList<string> IncludePaths { get; set; }
         public String SettingsPath { get; set; }
         public String OutputNameTemplate { get; set; }
         public Boolean IndicateWarnings { get; set; }
@@ -1825,14 +1827,43 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
         }
     }
 
-    static class ExcludeUtils
+    static class PathFilterUtils
     {
-        public static bool IsExcludePathsSupported = true;
-       
+        public static bool IsPathFilterSupported = true;
+
+        private static string SourceTreeRoot = "";
+        private static TransformationMode TransformationMode = TransformationMode.toAbsolute;
+
+        public static List<ErrorInfoAdapter> PathFilter(this IEnumerable<ErrorInfoAdapter> errors,
+                                                        IEnumerable<string> includePaths,
+                                                        IEnumerable<string> excludePaths,
+                                                        string _sourceTreeRoot,
+                                                        TransformationMode _transformationMode)
+        {
+            SourceTreeRoot = _sourceTreeRoot;
+            TransformationMode = _transformationMode;
+
+            return errors.IncludePath(includePaths)
+                         .ExcludePaths(excludePaths);
+        }
+
+        public static List<ErrorInfoAdapter> IncludePath(this IEnumerable<ErrorInfoAdapter> errors,
+                                                         IEnumerable<string> includePaths)
+        {
+            if (includePaths == null || includePaths.Count() == 0)
+            {
+                return errors.ToList();
+            }
+
+            var includePathArray = includePaths as string[] ?? includePaths.ToArray();
+            return errors.Where(error =>
+            includePathArray.Any(includePath => IsPathMatch(error.ErrorInfo.FileName, includePath, SourceTreeRoot, TransformationMode)) || !IsPathFilterSupported
+            ).ToList();
+        }
+
         public static List<ErrorInfoAdapter> ExcludePaths(this IEnumerable<ErrorInfoAdapter> errors,
-                                                         IEnumerable<string> excludePaths,
-                                                         string sourceTreeRoot,
-                                                         TransformationMode transformationMode)
+                                                          IEnumerable<string> excludePaths)
+
         {
             if (excludePaths == null || excludePaths.Count() == 0)
             {
@@ -1841,31 +1872,36 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
 
             var excludePathsArray = excludePaths as string[] ?? excludePaths.ToArray();
             return errors.Where(error =>
-            !excludePathsArray.Any(excludePath => IsExcludePath(error.ErrorInfo.FileName, excludePath, sourceTreeRoot, transformationMode))
+            !excludePathsArray.Any(excludePath => IsPathMatch(error.ErrorInfo.FileName, excludePath, SourceTreeRoot, TransformationMode))
             ).ToList();
         }
 
-        public static bool IsExcludePath(string srcPath, string excludePath,
-                                        string sourceTreeRoot, TransformationMode transformationMode)
+        public static bool IsPathMatch(string srcPath, string mask,
+                                       string sourceTreeRoot, TransformationMode transformationMode)
         {
-            if (!IsExcludePathsSupported)
+            if (!IsPathFilterSupported)
+            {
                 return false;
+            }
 
             if (srcPath.StartsWith(Utils.SourceTreeRootMarker))
             {
                 if (string.IsNullOrEmpty(sourceTreeRoot))
                 {
-                    IsExcludePathsSupported = false;
+                    IsPathFilterSupported = false;
                     return false;
                 }
-                srcPath = PlogRenderUtils.ConvertPath(srcPath, sourceTreeRoot, transformationMode);
+                srcPath = PlogRenderUtils.ConvertPath(srcPath, sourceTreeRoot, transformationMode); 
             }
 
             string normalizedSrcPath = Utils.NormalizePath(srcPath);
-            string normalizedExcludePath = Utils.NormalizePath(excludePath);
+            string normalizedExcludePath = Utils.NormalizePath(mask);
 
-            if (String.IsNullOrWhiteSpace(normalizedSrcPath) || String.IsNullOrWhiteSpace(normalizedExcludePath))
+            if (   String.IsNullOrWhiteSpace(normalizedSrcPath)
+                || String.IsNullOrWhiteSpace(normalizedExcludePath))
+            {
                 return false;
+            }
 
             return Utils.PathMatchSpec(normalizedSrcPath, normalizedExcludePath);
         }

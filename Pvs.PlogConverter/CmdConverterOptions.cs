@@ -60,8 +60,12 @@ namespace ProgramVerificationSystems.PlogConverter
         /// </summary>
         /// <example>--excludePaths=C:\deps*\*.cpp,C:\test\*.?pp</example>
         [OptionList('e', "excludePaths", Required = false, HelpText = "Excludes from the report all warnings issued in certain files. " +
-            "                                                          Separate the paths or masks with the ';' character.", Separator=';')]
+                                                                      "Separate the paths or masks with the ';' character.", Separator=';')]
         public IList<string> excludePaths { get; set; }
+
+        [OptionList('i', "includePaths", Required =false, HelpText = "Include in the report only warnings issued on specified files. " +
+                                                                     "Separate the paths or masks with the ';' character.", Separator =';')]
+        public IList<string> includePaths { get; set; }
 
         [Option('R', "pathTransformationMode", Required = false, DefaultValue = TransformationMode.toAbsolute, HelpText = "Trasformation mode: toAbsolute - transform to absolute path, " +
             "toRelative - transform to relative with source root (--srcRoot option).")]

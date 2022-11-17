@@ -74,6 +74,25 @@ namespace ProgramVerificationSystems.PlogConverter
             return path.Contains("*") || path.Contains("?");
         }
 
+        public static List<string> GetAbsolutePath(IList<string> cmdPathList)
+        {
+            List<string> pathList = new List<string>();
+            if (cmdPathList != null && cmdPathList.Count != 0)
+            {
+                foreach (string itPath in cmdPathList)
+                {
+                    string path = itPath.Trim();
+
+                    if (!Utils.IsMask(path))
+                    {
+                        path = Path.GetFullPath(path);
+                    }
+                    pathList.Add(path);
+                }
+            }
+            return pathList;
+        }
+
         public static bool PathMatchSpec(String path, String spec)
         {
             if (IsMask(spec))
