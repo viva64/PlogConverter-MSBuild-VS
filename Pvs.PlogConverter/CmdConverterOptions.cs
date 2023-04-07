@@ -157,6 +157,12 @@ namespace ProgramVerificationSystems.PlogConverter
         [Option("noHelpMessages", Required = false, DefaultValue = false, HelpText = "Do not display documentation messages in warnings output.")]
         public bool NoHelp { get; set; }
 
+        /// <summary>
+        /// Tag all the warnings from the 64-bit diagnostic groups and micro-optimization diagnostic groups as informational.Only for fullhtml report.
+        /// </summary>
+        [Option("separateNonCriticalToInfo" ,Required =false, DefaultValue = false, HelpText = InternalHelpText)]
+        public bool SeparateNonCriticalToInfo { get; set; }
+
         protected override String GetPreOptionsLine()
         {
             return string.Format("{0}PlogConverter.exe [options] [log path(s)]", Environment.NewLine);

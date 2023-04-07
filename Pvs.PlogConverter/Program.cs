@@ -171,6 +171,7 @@ namespace ProgramVerificationSystems.PlogConverter
             parsedArgs.RenderInfo.GRP = converterOptions.GRP;
             parsedArgs.RenderInfo.MisraDeviations = converterOptions.MisraDeviations;
             parsedArgs.RenderInfo.NoHelp = converterOptions.NoHelp;
+            parsedArgs.RenderInfo.SeparateNonCriticalToInfo = converterOptions.SeparateNonCriticalToInfo;
 
             if (!Directory.Exists(parsedArgs.RenderInfo.OutputDir))
             {

@@ -1409,6 +1409,10 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
                     Directory.Delete(defaultFullHtmlDir, true);
 
                 string arguments = $" \"{jsonLog}\" -t fullhtml -o \"{defaultFullHtmlDir}\" -r \"{RenderInfo.SrcRoot.TrimEnd(new char[] { '\\', '/' })}\" -a \"GA;64;OP;CS;MISRA;AUTOSAR;OWASP\"";
+
+                if (RenderInfo.SeparateNonCriticalToInfo)
+                    arguments += " --separateNonCriticalToInfo";
+
                 foreach (var security in ErrorCodeMappings)
                     arguments += " -m " + security.ToString().ToLower();
 
@@ -1766,6 +1770,7 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
         public string MisraDeviations { get; set; } = String.Empty;
         public bool AllLogRenderType { get; set; } = false;
         public bool NoHelp { get; set; } = false;
+        public bool SeparateNonCriticalToInfo { get; set; } = false;
     }
 
     class PlogRenderUtils
