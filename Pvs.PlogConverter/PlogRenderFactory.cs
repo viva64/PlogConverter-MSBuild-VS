@@ -228,6 +228,8 @@ namespace ProgramVerificationSystems.PlogConverter
                     return GetRenderService<MisraComplianceRenderer>(renderType, completedAction);
                 case LogRenderType.GitLab:
                     return GetRenderService<GitLabRenderer>(renderType, completedAction);
+                case LogRenderType.DefectDojo:
+                    return GetRenderService<DefectDojoRender>(renderType, completedAction);
                 default:
                     goto case LogRenderType.Html;
             }
@@ -1736,6 +1738,31 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
                 var sourceRoot = RenderInfo.SrcRoot.TrimEnd(new char[] { '\\', '/' });
      
                 string arguments = $" \"{jsonLog}\" -t gitlab -o \"{fileName}\" -r \"{sourceRoot}\" -a \"GA;64;OP;CS;MISRA;AUTOSAR;OWASP\"";
+                foreach (var security in ErrorCodeMappings)
+                    arguments += " -m " + security.ToString().ToLower();
+
+                return (arguments, fileName);
+            }
+        }
+        #endregion
+
+        #region Implementation for GitLab output
+        [SupportRelativePath]
+        private sealed class DefectDojoRender : BaseHtmlGeneratorRender
+        {
+            public DefectDojoRender(RenderInfo renderInfo, IEnumerable<ErrorInfoAdapter> errors, IEnumerable<ErrorCodeMapping> errorCodeMappings,
+                                   string outputNameTemplate, LogRenderType renderType, ILogger logger = null)
+                : base(renderInfo, errors, errorCodeMappings, outputNameTemplate, renderType, logger)
+            {
+            }
+
+            protected override (string, string) GetGenerateData(string jsonLog)
+            {
+                var logName = !string.IsNullOrWhiteSpace(OutputNameTemplate) ? OutputNameTemplate : (RenderInfo.Logs.Count == 1 ? Path.GetFileName(RenderInfo.Logs.First()) : "MergedReport");
+                var fileName = Path.Combine(RenderInfo.OutputDir, $"{logName}{LogExtension}").TrimEnd(new char[] { '\\', '/' });
+                var sourceRoot = RenderInfo.SrcRoot.TrimEnd(new char[] { '\\', '/' });
+
+                string arguments = $" \"{jsonLog}\" -t defectdojo -o \"{fileName}\" -r \"{sourceRoot}\" -a \"GA;64;OP;CS;MISRA;AUTOSAR;OWASP\"";
                 foreach (var security in ErrorCodeMappings)
                     arguments += " -m " + security.ToString().ToLower();
 
