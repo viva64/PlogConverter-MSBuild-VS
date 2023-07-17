@@ -277,6 +277,7 @@ namespace ProgramVerificationSystems.PlogConverter
             parsedArgs.SettingsPath = converterOptions.SettingsPath;
             parsedArgs.OutputNameTemplate = converterOptions.OutputNameTemplate;
             parsedArgs.IndicateWarnings = converterOptions.IndicateWarnings || converterOptions.IndicateWarningsDeprecated;
+            parsedArgs.KeepFalseAlarms = converterOptions.KeepFalseAlarms;
 
             errorMessage = string.Empty;
             return true;

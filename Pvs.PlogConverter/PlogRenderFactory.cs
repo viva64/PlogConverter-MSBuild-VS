@@ -183,7 +183,7 @@ namespace ProgramVerificationSystems.PlogConverter
         private IPlogRenderer GetRenderService<T>(LogRenderType renderType, Action<LogRenderType, string> completedAction) where T : class, IPlogRenderer
         {
             var renderer = Activator.CreateInstance(typeof(T), new object[] { _parsedArgs.RenderInfo,
-                                                                              _errors.ExcludeFalseAlarms(renderType)
+                                                                              _errors.ExcludeFalseAlarms(renderType, _parsedArgs.KeepFalseAlarms)
                                                                                      .PathFilter(_parsedArgs.IncludePaths, 
                                                                                                  _parsedArgs.ExcludePaths, 
                                                                                                  _parsedArgs.RenderInfo.SrcRoot, 
@@ -1746,7 +1746,7 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
         }
         #endregion
 
-        #region Implementation for GitLab output
+        #region Implementation for DefectDojo output
         [SupportRelativePath]
         private sealed class DefectDojoRender : BaseHtmlGeneratorRender
         {
@@ -1784,6 +1784,7 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
         public String SettingsPath { get; set; }
         public String OutputNameTemplate { get; set; }
         public Boolean IndicateWarnings { get; set; }
+        public Boolean KeepFalseAlarms { get; set; }
     }
 
     public class RenderInfo

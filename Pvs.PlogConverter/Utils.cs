@@ -586,9 +586,9 @@ namespace ProgramVerificationSystems.PlogConverter
         /// </summary>
         /// <param name="errors">Errors</param>
         /// <returns>Errors without false alarms</returns>
-        public static List<ErrorInfoAdapter> ExcludeFalseAlarms(this IEnumerable<ErrorInfoAdapter> errors, LogRenderType renderType)
+        public static List<ErrorInfoAdapter> ExcludeFalseAlarms(this IEnumerable<ErrorInfoAdapter> errors, LogRenderType renderType, bool keepFalseAlarms)
         {
-            if (renderType == LogRenderType.MisraCompliance)
+            if (renderType == LogRenderType.MisraCompliance || keepFalseAlarms)
                 return errors.ToList();
 
             return errors.Where(error => !error.ErrorInfo.FalseAlarmMark).ToList();
