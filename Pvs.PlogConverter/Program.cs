@@ -48,7 +48,7 @@ namespace ProgramVerificationSystems.PlogConverter
 
                 var hasRanderTypes = parsedArgs.RenderTypes != null && parsedArgs.RenderTypes.Count > 0;
                 
-                if (parsedArgs.CountWarnings.Any())
+                if (parsedArgs.CountWarnings != null && parsedArgs.CountWarnings.Any())
                 {
                     return (int)CountWarnigns(renderFactory);
                 }
