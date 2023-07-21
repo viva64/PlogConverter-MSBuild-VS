@@ -46,7 +46,14 @@ namespace ProgramVerificationSystems.PlogConverter
 
                 var renderFactory = new PlogRenderFactory(parsedArgs, Logger);
 
-                var acceptedRenderTypes = parsedArgs.RenderTypes != null && parsedArgs.RenderTypes.Count > 0
+                var hasRanderTypes = parsedArgs.RenderTypes != null && parsedArgs.RenderTypes.Count > 0;
+                
+                if (parsedArgs.CountWarnings.Any())
+                {
+                    return (int)CountWarnigns(renderFactory);
+                }
+
+                var acceptedRenderTypes = hasRanderTypes
                     ? parsedArgs.RenderTypes.ToArray()
                     : Utils.GetEnumValues<LogRenderType>();
 
@@ -125,7 +132,16 @@ namespace ProgramVerificationSystems.PlogConverter
                 return (int)ConverterRunState.GeneralException;
             }
         }
-        
+
+        private static ConverterRunState CountWarnigns(PlogRenderFactory renderFactory)
+        {
+            string outputMessage;
+            var result = renderFactory.TryCountWarnigns(out outputMessage);
+            DefaultWriter.WriteLine(outputMessage);
+
+            return result ? ConverterRunState.Success : ConverterRunState.IncorrectArguments;
+        }
+
         private static bool IsHelpArgumentOnly(string[] args)
         {
             return args != null && args.Length == 1 && args[0] == "--help";
@@ -278,6 +294,7 @@ namespace ProgramVerificationSystems.PlogConverter
             parsedArgs.OutputNameTemplate = converterOptions.OutputNameTemplate;
             parsedArgs.IndicateWarnings = converterOptions.IndicateWarnings || converterOptions.IndicateWarningsDeprecated;
             parsedArgs.KeepFalseAlarms = converterOptions.KeepFalseAlarms;
+            parsedArgs.CountWarnings = converterOptions.CountWarnings;
 
             errorMessage = string.Empty;
             return true;

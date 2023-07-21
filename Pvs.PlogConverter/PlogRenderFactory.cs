@@ -110,6 +110,12 @@ namespace ProgramVerificationSystems.PlogConverter
             OrderErrors(_errors, _parsedArgs.RenderInfo.SrcRoot, _parsedArgs.RenderInfo.TransformationMode);
         }
 
+        public bool TryCountWarnigns(out string outputMessage)
+        {
+            outputMessage = "";
+            return Utils.TryParseCountWarningsCommand(_parsedArgs.CountWarnings, _errors, out outputMessage);
+        }
+
         static public object[] GetPrimaryKey(ErrorInfo ei)
         {
             return new object[] { ei.LineNumber,
@@ -1785,6 +1791,7 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
         public String OutputNameTemplate { get; set; }
         public Boolean IndicateWarnings { get; set; }
         public Boolean KeepFalseAlarms { get; set; }
+        public IList<string> CountWarnings { get; set; }
     }
 
     public class RenderInfo

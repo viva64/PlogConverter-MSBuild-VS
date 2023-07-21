@@ -140,6 +140,12 @@ namespace ProgramVerificationSystems.PlogConverter
             HelpText = "Set this option to preserve warnings marked as False Alarms in the report.")]
         public bool KeepFalseAlarms { get; set; }
 
+        [OptionList('c', "countWarnings", Separator = ';',Required = false, 
+            HelpText = "Use this options to display the number of messages matching the command. " + 
+                       "Command format: -c {Groups or Error Codes}:{Levels};{Other Arguments}... " +
+                       "Command examples: -c GA:1,2;OP:1 | -c V003 | -c V502,V504:1 | -c ALL")]
+        public IList<String> CountWarnings { get; set; }
+
         /// <summary>
         ///     Path to Guideline Re-categorization Plan (GRP) file
         /// </summary>

@@ -577,6 +577,107 @@ namespace ProgramVerificationSystems.PlogConverter
                   + Regex.Escape(new string(Path.GetInvalidPathChars())) + "]");
             return !containsABadCharacter.IsMatch(testName);
         }
+
+        public static bool TryParseCountWarningsCommand(IList<string> countWarningsCommand, List<ErrorInfoAdapter> Errors, out string outputMessage)
+        {
+            outputMessage = "Warning statistics:\n";
+            var message = new List<string>();
+            string incorrectCommandtMessage(string arguments) => $"Incorrect command: '-c [--countWarnings] {arguments}'. The arguments must contains a diagnostic number or group";
+
+            countWarningsCommand = countWarningsCommand.Where(req => !string.IsNullOrWhiteSpace(req)).Distinct().ToList();
+            if (countWarningsCommand.Count == 0) 
+            {
+                outputMessage = incorrectCommandtMessage("");
+                return false;
+            }
+
+            foreach (var commands in countWarningsCommand)
+            {
+                var command = commands.Replace(" ", "").Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
+                
+                var searchCategories = new string[0];
+                if (command.Length > 0) 
+                    searchCategories = command[0].Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+
+                if (searchCategories.Length == 0)
+                {
+                    outputMessage = incorrectCommandtMessage(commands);
+                    return false;
+                }
+
+                var levels = new string[] { "ALL" };
+                if (command.Length == 2)
+                    levels = command[1].Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);               
+
+                var parsedLevels = new HashSet<uint>();
+                if (levels.Length == 1 && string.Equals(levels[0], "ALL", StringComparison.OrdinalIgnoreCase))
+                {
+                    parsedLevels = new HashSet<uint> { 1, 2, 3 };
+                }
+                else 
+                {
+                    foreach (var level in levels)
+                    {
+                        uint parsedLevel;
+                        if (uint.TryParse(level.Trim(), out parsedLevel))
+                        {
+                            parsedLevels.Add(parsedLevel);
+                        }
+                        else
+                        {
+                            outputMessage = $"Incorrect level: '{level}'. Level must be an integer value";
+                            return false;
+                        }
+                    }
+                }
+
+                IEnumerable<ErrorInfoAdapter> _errors = new List<ErrorInfoAdapter>(Errors);
+                IEnumerable<ErrorInfoAdapter> _errorsUnion = new List<ErrorInfoAdapter>();
+
+                foreach (var searchCategory in searchCategories) 
+                {
+                    var _searchCategory = searchCategory.Trim();
+                    if (string.Equals(_searchCategory, "ALL", StringComparison.OrdinalIgnoreCase)) 
+                    {
+                        _errorsUnion = _errorsUnion.Union(_errors);
+                    }
+                    else if (IsValidErrorCode(_searchCategory))
+                    {
+                        _errorsUnion = _errorsUnion.Union(_errors.Where(err => err.ErrorInfo.ErrorCode == _searchCategory));
+                    }
+                    else
+                    {
+                        bool success;
+                        var analyzerType = _searchCategory.ShortNameToType(out success);
+                        if (success)
+                        {
+                            _errorsUnion = _errorsUnion.Union(_errors.Where(err => err.ErrorInfo.AnalyzerType == analyzerType));
+                        }
+                        else 
+                        {
+                            outputMessage = incorrectCommandtMessage(commands);
+                            return false;
+                        }
+                    }
+                }
+
+                _errorsUnion = _errorsUnion.Where(err => parsedLevels.Contains(err.ErrorInfo.Level)); 
+
+                outputMessage += $"{commands.Replace(" ", "")} - {_errorsUnion.Count()}\n";
+            }
+            return true;
+        }
+        private static bool IsValidErrorCode(string errorCode) 
+        {
+            if (errorCode == null || !errorCode.StartsWith("V", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            uint errorNumber;
+            if (uint.TryParse(errorCode.Substring(1, errorCode.Length - 1), out errorNumber) && errorNumber < 10000)
+                return true;
+
+            return false;
+        }
     }
 
     public static class ErrorsFilters
