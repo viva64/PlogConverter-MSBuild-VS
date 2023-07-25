@@ -110,7 +110,7 @@ namespace ProgramVerificationSystems.PlogConverter
             OrderErrors(_errors, _parsedArgs.RenderInfo.SrcRoot, _parsedArgs.RenderInfo.TransformationMode);
         }
 
-        public bool TryCountWarnigns(out string outputMessage)
+        public ConverterRunState TryCountWarnigns(out string outputMessage)
         {
             outputMessage = "";
             return Utils.TryParseCountWarningsCommand(_parsedArgs.CountWarnings, _errors, out outputMessage);

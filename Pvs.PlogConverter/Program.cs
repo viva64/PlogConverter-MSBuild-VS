@@ -139,7 +139,7 @@ namespace ProgramVerificationSystems.PlogConverter
             var result = renderFactory.TryCountWarnigns(out outputMessage);
             DefaultWriter.WriteLine(outputMessage);
 
-            return result ? ConverterRunState.Success : ConverterRunState.IncorrectArguments;
+            return result;
         }
 
         private static bool IsHelpArgumentOnly(string[] args)

@@ -578,8 +578,9 @@ namespace ProgramVerificationSystems.PlogConverter
             return !containsABadCharacter.IsMatch(testName);
         }
 
-        public static bool TryParseCountWarningsCommand(IList<string> countWarningsCommand, List<ErrorInfoAdapter> Errors, out string outputMessage)
+        public static ConverterRunState TryParseCountWarningsCommand(IList<string> countWarningsCommand, List<ErrorInfoAdapter> Errors, out string outputMessage)
         {
+            bool hasWarnigns = false;
             outputMessage = "Warning statistics:\n";
             var message = new List<string>();
             string incorrectCommandtMessage(string arguments) => $"Incorrect command: '-c [--countWarnings] {arguments}'. The arguments must contains a diagnostic number or group";
@@ -588,7 +589,7 @@ namespace ProgramVerificationSystems.PlogConverter
             if (countWarningsCommand.Count == 0) 
             {
                 outputMessage = incorrectCommandtMessage("");
-                return false;
+                return ConverterRunState.IncorrectArguments;
             }
 
             foreach (var commands in countWarningsCommand)
@@ -602,7 +603,7 @@ namespace ProgramVerificationSystems.PlogConverter
                 if (searchCategories.Length == 0)
                 {
                     outputMessage = incorrectCommandtMessage(commands);
-                    return false;
+                    return ConverterRunState.IncorrectArguments;
                 }
 
                 var levels = new string[] { "ALL" };
@@ -626,7 +627,7 @@ namespace ProgramVerificationSystems.PlogConverter
                         else
                         {
                             outputMessage = $"Incorrect level: '{level}'. Level must be an integer value";
-                            return false;
+                            return ConverterRunState.IncorrectArguments;
                         }
                     }
                 }
@@ -656,7 +657,7 @@ namespace ProgramVerificationSystems.PlogConverter
                         else 
                         {
                             outputMessage = incorrectCommandtMessage(commands);
-                            return false;
+                            return ConverterRunState.IncorrectArguments;
                         }
                     }
                 }
@@ -664,8 +665,12 @@ namespace ProgramVerificationSystems.PlogConverter
                 _errorsUnion = _errorsUnion.Where(err => parsedLevels.Contains(err.ErrorInfo.Level)); 
 
                 outputMessage += $"{commands.Replace(" ", "")} - {_errorsUnion.Count()}\n";
+
+                if (_errorsUnion.Any())
+                    hasWarnigns = true;
             }
-            return true;
+
+            return hasWarnigns ? ConverterRunState.OutputLogNotEmpty : ConverterRunState.Success;
         }
         private static bool IsValidErrorCode(string errorCode) 
         {
