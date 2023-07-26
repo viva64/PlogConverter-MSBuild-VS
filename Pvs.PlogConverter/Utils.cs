@@ -613,7 +613,7 @@ namespace ProgramVerificationSystems.PlogConverter
                 var parsedLevels = new HashSet<uint>();
                 if (levels.Length == 1 && string.Equals(levels[0], "ALL", StringComparison.OrdinalIgnoreCase))
                 {
-                    parsedLevels = new HashSet<uint> { 1, 2, 3 };
+                    parsedLevels = new HashSet<uint> { 0, 1, 2, 3 };
                 }
                 else 
                 {
