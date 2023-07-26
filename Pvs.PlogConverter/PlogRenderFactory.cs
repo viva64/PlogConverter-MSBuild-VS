@@ -110,10 +110,11 @@ namespace ProgramVerificationSystems.PlogConverter
             OrderErrors(_errors, _parsedArgs.RenderInfo.SrcRoot, _parsedArgs.RenderInfo.TransformationMode);
         }
 
-        public bool TryCountWarnigns(out string outputMessage)
+        public bool TryCountWarnigns(out string outputMessage, out bool hasWarnings)
         {
             outputMessage = "";
-            return Utils.TryParseCountWarningsCommand(_parsedArgs.CountWarnings, _errors, out outputMessage);
+            hasWarnings = false;
+            return Utils.TryParseCountWarningsCommand(_parsedArgs.CountWarnings, _errors, out outputMessage, out hasWarnings);
         }
 
         static public object[] GetPrimaryKey(ErrorInfo ei)

@@ -136,10 +136,14 @@ namespace ProgramVerificationSystems.PlogConverter
         private static ConverterRunState CountWarnigns(PlogRenderFactory renderFactory)
         {
             string outputMessage;
-            var result = renderFactory.TryCountWarnigns(out outputMessage);
+            bool hasWarnings;
+            var result = renderFactory.TryCountWarnigns(out outputMessage, out hasWarnings);
             DefaultWriter.WriteLine(outputMessage);
 
-            return result ? ConverterRunState.Success : ConverterRunState.IncorrectArguments;
+            if (!result) 
+                return ConverterRunState.IncorrectArguments;
+
+            return hasWarnings ? ConverterRunState.OutputLogNotEmpty : ConverterRunState.Success;
         }
 
         private static bool IsHelpArgumentOnly(string[] args)

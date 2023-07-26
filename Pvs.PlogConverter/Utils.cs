@@ -578,8 +578,9 @@ namespace ProgramVerificationSystems.PlogConverter
             return !containsABadCharacter.IsMatch(testName);
         }
 
-        public static bool TryParseCountWarningsCommand(IList<string> countWarningsCommand, List<ErrorInfoAdapter> Errors, out string outputMessage)
+        public static bool TryParseCountWarningsCommand(IList<string> countWarningsCommand, List<ErrorInfoAdapter> Errors, out string outputMessage, out bool hasWarnings)
         {
+            hasWarnings = false;
             outputMessage = "Warning statistics:\n";
             var message = new List<string>();
             string incorrectCommandtMessage(string arguments) => $"Incorrect command: '-c [--countWarnings] {arguments}'. The arguments must contains a diagnostic number or group";
@@ -664,7 +665,11 @@ namespace ProgramVerificationSystems.PlogConverter
                 _errorsUnion = _errorsUnion.Where(err => parsedLevels.Contains(err.ErrorInfo.Level)); 
 
                 outputMessage += $"{commands.Replace(" ", "")} - {_errorsUnion.Count()}\n";
+
+                if (_errorsUnion.Any())
+                    hasWarnings = true;
             }
+
             return true;
         }
         private static bool IsValidErrorCode(string errorCode) 
