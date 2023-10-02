@@ -160,14 +160,12 @@ namespace ProgramVerificationSystems.PlogConverter
 
             if (logExtention.Equals(PlogExtension, StringComparison.OrdinalIgnoreCase))
             {
-                var xmlText = File.ReadAllText(plogFilename, DefaultEncoding);
-                return GetErrorsFromXml(out solutionName, xmlText);
+                return GetErrorsFromXml(out solutionName, plogFilename);
             }
             else if (logExtention.Equals(JsonLogExtension, StringComparison.OrdinalIgnoreCase))
             {
                 solutionName = String.Empty;
-                var jsonText = File.ReadAllText(plogFilename, DefaultEncoding);
-                return GetErrorsFromJson(jsonText);
+                return GetErrorsFromJson(plogFilename);
             }
             else
             {
@@ -292,11 +290,25 @@ namespace ProgramVerificationSystems.PlogConverter
             return GetErrorsFromXml(out solutionName, plogSet.GetXml());
         }
 
-        private static IEnumerable<ErrorInfoAdapter> GetErrorsFromXml(out string solutionName, string xmlText)
+        private static IEnumerable<ErrorInfoAdapter> GetErrorsFromXml(out string solutionName, string xml)
         {
             // todo: Add plog version check for a subsequent upgrade
             var plogXmlDocument = new XmlDocument();
-            plogXmlDocument.LoadXml(xmlText);
+            if (File.Exists(xml))
+            {
+                using (StreamReader reader = new StreamReader(xml))
+                {
+                    using (XmlReader xmlReader = XmlReader.Create(reader))
+                    {
+                        plogXmlDocument.Load(xmlReader);
+                    }
+                }
+            }
+            else 
+            {
+                plogXmlDocument.LoadXml(xml);
+            }
+            
             var solPathNodeList = plogXmlDocument.GetElementsByTagName(DataColumnNames.SolutionPath);
             if (solPathNodeList.Count > 0)
                 solutionName = solPathNodeList[0].FirstChild != null ? (solPathNodeList[0].FirstChild.Value ?? string.Empty) : string.Empty;
@@ -307,9 +319,19 @@ namespace ProgramVerificationSystems.PlogConverter
             return messagesElements.Cast<object>().Select((o, elIndex) => GetErrorInfo(messagesElements, elIndex)).ToList();
         }
 
-        private static IEnumerable<ErrorInfoAdapter> GetErrorsFromJson(string jsonText)
+        private static IEnumerable<ErrorInfoAdapter> GetErrorsFromJson(string json)
         {
-            JsonPvsReport jsonPvsReport = JsonConvert.DeserializeObject<JsonPvsReport>(jsonText);
+            JsonPvsReport jsonPvsReport;
+            var serializer = new JsonSerializer();
+            using (StreamReader reader = new StreamReader(json)) 
+            {
+                using (JsonTextReader jsonReader = new JsonTextReader(reader))
+                {
+                    jsonPvsReport = serializer.Deserialize<JsonPvsReport>(jsonReader);
+                }
+            }
+            
+            
             List<ErrorInfoAdapter> errorInfoAdapters = new List<ErrorInfoAdapter>();
 
             foreach(JsonPvsReport.Warning warning in jsonPvsReport.Warnings)
