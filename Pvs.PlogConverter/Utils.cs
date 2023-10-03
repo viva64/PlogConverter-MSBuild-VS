@@ -160,7 +160,8 @@ namespace ProgramVerificationSystems.PlogConverter
 
             if (logExtention.Equals(PlogExtension, StringComparison.OrdinalIgnoreCase))
             {
-                return GetErrorsFromXml(out solutionName, plogFilename);
+                var xmlText = File.ReadAllText(plogFilename, DefaultEncoding);
+                return GetErrorsFromXml(out solutionName, xmlText);
             }
             else if (logExtention.Equals(JsonLogExtension, StringComparison.OrdinalIgnoreCase))
             {
@@ -290,25 +291,11 @@ namespace ProgramVerificationSystems.PlogConverter
             return GetErrorsFromXml(out solutionName, plogSet.GetXml());
         }
 
-        private static IEnumerable<ErrorInfoAdapter> GetErrorsFromXml(out string solutionName, string xml)
+        private static IEnumerable<ErrorInfoAdapter> GetErrorsFromXml(out string solutionName, string xmlText)
         {
             // todo: Add plog version check for a subsequent upgrade
             var plogXmlDocument = new XmlDocument();
-            if (File.Exists(xml))
-            {
-                using (StreamReader reader = new StreamReader(xml))
-                {
-                    using (XmlReader xmlReader = XmlReader.Create(reader))
-                    {
-                        plogXmlDocument.Load(xmlReader);
-                    }
-                }
-            }
-            else 
-            {
-                plogXmlDocument.LoadXml(xml);
-            }
-            
+            plogXmlDocument.LoadXml(xmlText);
             var solPathNodeList = plogXmlDocument.GetElementsByTagName(DataColumnNames.SolutionPath);
             if (solPathNodeList.Count > 0)
                 solutionName = solPathNodeList[0].FirstChild != null ? (solPathNodeList[0].FirstChild.Value ?? string.Empty) : string.Empty;
