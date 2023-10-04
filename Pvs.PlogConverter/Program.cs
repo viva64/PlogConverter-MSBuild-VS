@@ -299,6 +299,7 @@ namespace ProgramVerificationSystems.PlogConverter
             parsedArgs.IndicateWarnings = converterOptions.IndicateWarnings || converterOptions.IndicateWarningsDeprecated;
             parsedArgs.KeepFalseAlarms = converterOptions.KeepFalseAlarms;
             parsedArgs.CountWarnings = converterOptions.CountWarnings;
+            parsedArgs.LogDifferences = converterOptions.LogDifferences;
 
             errorMessage = string.Empty;
             return true;

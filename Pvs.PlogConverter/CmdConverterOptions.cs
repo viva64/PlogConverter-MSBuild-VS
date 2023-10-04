@@ -146,6 +146,9 @@ namespace ProgramVerificationSystems.PlogConverter
                        "Command examples: -c GA:1,2;OP:1 | -c V003 | -c V502,V504:1 | -c ALL")]
         public IList<String> CountWarnings { get; set; }
 
+        [Option('D', "generateDiffWith", Required = false, HelpText = "Generates a report with the difference between the report provided by this option and the input report.")]
+        public String LogDifferences { get; set; }
+
         /// <summary>
         ///     Path to Guideline Re-categorization Plan (GRP) file
         /// </summary>

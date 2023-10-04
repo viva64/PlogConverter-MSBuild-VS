@@ -103,7 +103,7 @@ namespace ProgramVerificationSystems.PlogConverter
                                                              .Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList() :
                                                          new List<String>());
 
-            _errors = Utils.FilterErrors(_errors, _parsedArgs.LevelMap, allDisabledErrors)
+            _errors = Utils.FilterErrors(_errors.GenerateDiffLog(_parsedArgs), _parsedArgs.LevelMap, allDisabledErrors)
                            .FixTrialMessages()
                            .ToList();
 
@@ -144,7 +144,7 @@ namespace ProgramVerificationSystems.PlogConverter
                                                              .Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList() :
                                                          new List<String>());
 
-            _errors = Utils.FilterErrors(_errors, _parsedArgs.LevelMap, allDisabledErrors)
+            _errors = Utils.FilterErrors(_errors.GenerateDiffLog(_parsedArgs), _parsedArgs.LevelMap, allDisabledErrors)
                            .FixTrialMessages()
                            .ToList();
 
@@ -1793,6 +1793,7 @@ Total L1:{l1Total} + L2:{l2Total} + L3:{l3Total} = {total}";
         public Boolean IndicateWarnings { get; set; }
         public Boolean KeepFalseAlarms { get; set; }
         public IList<string> CountWarnings { get; set; }
+        public string LogDifferences { get; set; }
     }
 
     public class RenderInfo
