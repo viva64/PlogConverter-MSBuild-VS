@@ -21,10 +21,10 @@ namespace ProgramVerificationSystems.PlogConverter
             foreach (var logFile in parsedArg.RenderInfo.Logs)
             {
                 logPaths.Add(logFile);
-                AppendToErrorSet(lhLogErrorsSet as HashSet<ErrorInfoAdapter>,logFile);
+                AppendToErrorSet((HashSet<ErrorInfoAdapter>)lhLogErrorsSet,logFile);
             }
 
-            AppendToErrorSet(rhLogErrorsSet as HashSet<ErrorInfoAdapter>, parsedArg.LogDifferences);
+            AppendToErrorSet((HashSet<ErrorInfoAdapter>)rhLogErrorsSet, parsedArg.LogDifferences);
         }
 
         private static void AppendToErrorSet(HashSet<ErrorInfoAdapter> errorSet, string logFile)
