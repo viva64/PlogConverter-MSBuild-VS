@@ -97,11 +97,12 @@ namespace ProgramVerificationSystems.PlogConverter
 
             if ((_parsedArgs.DisabledErrorCodes != null && _parsedArgs.DisabledErrorCodes.Count > 0) ||
                 (_settings != null && !String.IsNullOrWhiteSpace(_settings.DisableDetectableErrors)))
-                allDisabledErrors = Enumerable.Union(_parsedArgs.DisabledErrorCodes ?? new List<String>(),
-                                                     _settings != null && !string.IsNullOrWhiteSpace(_settings.DisableDetectableErrors) ?
-                                                         _settings.DisableDetectableErrors
-                                                             .Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList() :
-                                                         new List<String>());
+
+            allDisabledErrors = _settings != null && !string.IsNullOrWhiteSpace(_settings.DisableDetectableErrors) && _parsedArgs.DisabledErrorCodes == null ?
+                                    _settings.DisableDetectableErrors
+                                             .Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                                             .ToList() :
+                                    _parsedArgs.DisabledErrorCodes ?? new List<String>();
 
             _errors = Utils.FilterErrors(_errors.GenerateDiffLog(_parsedArgs), _parsedArgs.LevelMap, allDisabledErrors)
                            .FixTrialMessages()
@@ -138,11 +139,11 @@ namespace ProgramVerificationSystems.PlogConverter
 
             if ((_parsedArgs.DisabledErrorCodes != null && _parsedArgs.DisabledErrorCodes.Count > 0) ||
                 (_settings != null && !String.IsNullOrWhiteSpace(_settings.DisableDetectableErrors)))
-                allDisabledErrors = Enumerable.Union(_parsedArgs.DisabledErrorCodes ?? new List<String>(),
-                                                     _settings != null && !string.IsNullOrWhiteSpace(_settings.DisableDetectableErrors) ?
-                                                         _settings.DisableDetectableErrors
-                                                             .Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList() :
-                                                         new List<String>());
+                allDisabledErrors = _settings != null && !string.IsNullOrWhiteSpace(_settings.DisableDetectableErrors) && _parsedArgs.DisabledErrorCodes == null ?
+                                    _settings.DisableDetectableErrors
+                                             .Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                                             .ToList() :
+                                    _parsedArgs.DisabledErrorCodes ?? new List<String>();
 
             _errors = Utils.FilterErrors(_errors.GenerateDiffLog(_parsedArgs), _parsedArgs.LevelMap, allDisabledErrors)
                            .FixTrialMessages()
